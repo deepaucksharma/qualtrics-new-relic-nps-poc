@@ -135,13 +135,19 @@ function generateHtml(config) {
   
   <!-- New Relic Browser Agent -->
   <script type="text/javascript">
-    window.NREUM||(NREUM={});NREUM.init={
-      licenseKey:"${config.NR_LICENSE_KEY}",
-      applicationID:"${config.NR_APP_ID}",
-      applicationName:"${config.NR_APP_NAME}"
-    };
+    // Initialize New Relic with error handling
+    try {
+      window.NREUM||(NREUM={});NREUM.init={
+        licenseKey:"${config.NR_LICENSE_KEY}",
+        applicationID:"${config.NR_APP_ID}",
+        applicationName:"${config.NR_APP_NAME}"
+      };
+      console.log('New Relic configuration initialized');
+    } catch (e) {
+      console.error('Error initializing New Relic config:', e);
+    }
   </script>
-  <script src="https://js-agent.newrelic.com/nr-1234.min.js"></script>
+  <script src="https://js-agent.newrelic.com/nr-1234.min.js" onerror="console.error('Failed to load New Relic script')"></script>
   
   <style>
     body { 
@@ -481,35 +487,100 @@ SINCE 1 day ago</pre>
   </div>
 
   <script>
-    // Wait for New Relic Browser Agent to initialize
+    // Wait for New Relic Browser Agent to initialize (with timeout)
+    let newRelicTimeoutTimer;
+    
     function waitForNewRelic() {
+      // Set a timeout to avoid waiting indefinitely
+      if (!newRelicTimeoutTimer) {
+        newRelicTimeoutTimer = setTimeout(() => {
+          console.warn('New Relic Browser Agent did not load within timeout period');
+          initializeFallback();
+        }, 3000); // Wait max 3 seconds
+      }
+      
       if (window.NREUM && window.NREUM.loaded) {
-        initializeApp();
-      } else {
+        clearTimeout(newRelicTimeoutTimer);
+        initializeWithNewRelic();
+      } else if (window.NREUM) {
+        // New Relic exists but not fully loaded, keep waiting
         setTimeout(waitForNewRelic, 100);
+      } else {
+        // No New Relic detected at all, check a few more times
+        if (window.newRelicRetries === undefined) {
+          window.newRelicRetries = 0;
+        }
+        
+        window.newRelicRetries++;
+        
+        if (window.newRelicRetries > 10) {
+          clearTimeout(newRelicTimeoutTimer);
+          console.warn('New Relic Browser Agent not detected after multiple retries');
+          initializeFallback();
+        } else {
+          setTimeout(waitForNewRelic, 100);
+        }
       }
     }
 
-    function initializeApp() {
+    function initializeWithNewRelic() {
       console.log('New Relic Browser Agent initialized');
       
-      // Set user ID
-      const userId = "POC_USER_" + Math.floor(Math.random() * 10000);
-      window.newrelic.setUserId(userId);
-      console.log('Set User ID:', userId);
-      document.getElementById('userIdDisplay').textContent = userId;
-      
-      // Get session ID (may need a short delay for the agent to set it)
-      setTimeout(() => {
-        const sessionId = window.sessionStorage.getItem('NRBA/SESSION_ID') || 'NOT_AVAILABLE';
-        console.log('Captured Session ID:', sessionId);
-        document.getElementById('sessionIdDisplay').textContent = sessionId;
-        document.getElementById('query-user-id').textContent = userId;
-        document.getElementById('query-session-id').textContent = sessionId;
+      try {
+        // Set user ID
+        const userId = "POC_USER_" + Math.floor(Math.random() * 10000);
         
-        // Initialize the application
-        initSimulator(userId, sessionId);
-      }, 500);
+        // Only call New Relic API if available
+        if (window.newrelic && typeof window.newrelic.setUserId === 'function') {
+          window.newrelic.setUserId(userId);
+          console.log('Set User ID in New Relic:', userId);
+        } else {
+          console.warn('New Relic setUserId method not available');
+        }
+        
+        document.getElementById('userIdDisplay').textContent = userId;
+        
+        // Get session ID (may need a short delay for the agent to set it)
+        setTimeout(() => {
+          let sessionId = 'NOT_AVAILABLE';
+          
+          try {
+            // Try to get New Relic session ID
+            sessionId = window.sessionStorage.getItem('NRBA/SESSION_ID') || 'NOT_AVAILABLE';
+            console.log('Captured Session ID:', sessionId);
+          } catch (error) {
+            console.warn('Error getting session ID:', error);
+            sessionId = 'ERROR_GETTING_SESSION_ID';
+          }
+          
+          document.getElementById('sessionIdDisplay').textContent = sessionId;
+          document.getElementById('query-user-id').textContent = userId;
+          document.getElementById('query-session-id').textContent = sessionId;
+          
+          // Initialize the application
+          initSimulator(userId, sessionId);
+        }, 500);
+      } catch (error) {
+        console.error('Error during New Relic initialization:', error);
+        initializeFallback();
+      }
+    }
+    
+    function initializeFallback() {
+      console.log('Using fallback initialization without New Relic');
+      
+      // Generate fallback IDs
+      const userId = "POC_USER_FALLBACK_" + Math.floor(Math.random() * 10000);
+      const sessionId = "FALLBACK_SESSION_" + new Date().getTime();
+      
+      document.getElementById('userIdDisplay').textContent = userId;
+      document.getElementById('sessionIdDisplay').textContent = sessionId;
+      document.getElementById('query-user-id').textContent = userId;
+      document.getElementById('query-session-id').textContent = sessionId;
+      
+      // Initialize the application
+      initSimulator(userId, sessionId);
+    }
       
       // Set up tabs
       const tabs = document.querySelectorAll('.tab');
@@ -816,6 +887,16 @@ SINCE 1 day ago</pre>
     
     // Start the process
     waitForNewRelic();
+    
+    // Fallback if script completely fails to execute
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        if (document.getElementById('userIdDisplay').textContent === 'Loading...') {
+          console.warn('Triggering fallback initialization after page load');
+          initializeFallback();
+        }
+      }, 5000); // 5 second additional safety net
+    });
   </script>
 </body>
 </html>`;
