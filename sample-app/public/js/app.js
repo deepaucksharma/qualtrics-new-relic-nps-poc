@@ -416,7 +416,14 @@ function updateNrqlQuery(userId, sessionId) {
       query = `SELECT * FROM NpsResponsePoc WHERE userId = '${userId}' SINCE ${timeRange} AGO LIMIT 100`;
       break;
     case 'overall-nps':
-      query = `SELECT sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore, sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) AS promoters, sum(CASE WHEN npsScore BETWEEN 7 AND 8 THEN 1 ELSE 0 END) AS passives, sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) AS detractors, count(*) AS totalResponses FROM NpsResponsePoc SINCE ${timeRange} AGO`;
+      query = `SELECT
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - 
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore,
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) AS promoters,
+  sum(CASE WHEN npsScore BETWEEN 7 AND 8 THEN 1 ELSE 0 END) AS passives,
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) AS detractors,
+  count(*) AS totalResponses
+FROM NpsResponsePoc SINCE ${timeRange} AGO`;
       break;
     case 'distribution':
       query = `SELECT count(*) FROM NpsResponsePoc FACET npsScore SINCE ${timeRange} AGO`;
@@ -461,48 +468,26 @@ document.getElementById('query-nrdb').addEventListener('click', async function()
       })
     });
     
-    // Handle different response status codes
-    if (response.ok) {
-      const result = await response.json();
-      
-      if (result.success) {
-        if (result.demo) {
-          // Demo data with a message
-          statusEl.textContent = result.message || 'Showing demo data';
-          statusEl.classList.add('success-message');
-        } else {
-          // Real data from New Relic
-          statusEl.textContent = 'Query successful';
-          statusEl.classList.add('success-message');
-        }
-        
-        // Show results container, hide no results message
-        resultContainerEl.classList.remove('hidden');
-        noResultsEl.classList.add('hidden');
-        
-        // Process and display the data
-        const data = result.data;
-        displayNrdbResults(data, query);
+    const result = await response.json();
+    
+    if (result.success) {
+      if (result.demo && result.message) {
+        statusEl.textContent = result.message;
+        statusEl.classList.add('success-message');
       } else {
-        statusEl.textContent = 'Error: ' + (result.error || 'Unknown error');
-        statusEl.classList.add('error-message');
-        
-        // Hide results container, show no results message
-        resultContainerEl.classList.add('hidden');
-        noResultsEl.classList.remove('hidden');
+        statusEl.textContent = 'Query successful';
+        statusEl.classList.add('success-message');
       }
-    } else {
-      // Handle HTTP error status codes
-      const errorResult = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
       
-      statusEl.textContent = 'Error: ' + (errorResult.error || 'HTTP Error ' + response.status);
-      if (errorResult.details) {
-        const detailsEl = document.createElement('div');
-        detailsEl.textContent = errorResult.details;
-        detailsEl.style.fontSize = '0.9em';
-        detailsEl.style.marginTop = '5px';
-        statusEl.appendChild(detailsEl);
-      }
+      // Show results container, hide no results message
+      resultContainerEl.classList.remove('hidden');
+      noResultsEl.classList.add('hidden');
+      
+      // Process and display the data
+      const data = result.data;
+      displayNrdbResults(data, query);
+    } else {
+      statusEl.textContent = 'Error: ' + (result.error || 'Unknown error');
       statusEl.classList.add('error-message');
       
       // Hide results container, show no results message
