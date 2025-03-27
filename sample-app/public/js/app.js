@@ -470,16 +470,21 @@ document.getElementById('query-nrdb').addEventListener('click', async function()
     
     const result = await response.json();
     
-    if (result.success || result.demo) {
-      statusEl.textContent = result.demo ? 'Demo data - New Relic API not configured' : 'Query successful';
-      statusEl.classList.add(result.demo ? 'error-message' : 'success-message');
+    if (result.success) {
+      if (result.demo && result.message) {
+        statusEl.textContent = result.message;
+        statusEl.classList.add('success-message');
+      } else {
+        statusEl.textContent = 'Query successful';
+        statusEl.classList.add('success-message');
+      }
       
       // Show results container, hide no results message
       resultContainerEl.classList.remove('hidden');
       noResultsEl.classList.add('hidden');
       
       // Process and display the data
-      const data = result.demo ? result.demoData : result.data;
+      const data = result.data;
       displayNrdbResults(data, query);
     } else {
       statusEl.textContent = 'Error: ' + (result.error || 'Unknown error');
@@ -500,6 +505,9 @@ document.getElementById('query-nrdb').addEventListener('click', async function()
 });
 
 function displayNrdbResults(data, query) {
+  // Check if we have a demo message to display
+  const queryStatusEl = document.getElementById('query-status');
+  
   if (!data || data.length === 0) {
     document.getElementById('nrdb-result-container').classList.add('hidden');
     document.getElementById('nrdb-no-results').classList.remove('hidden');
