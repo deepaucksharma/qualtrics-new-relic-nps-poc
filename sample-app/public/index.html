@@ -266,88 +266,7 @@
       animation: fadeIn 0.5s;
     }
     
-    /* NRDB Verification Screen Styles */
-    .nrdb-summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-    
-    .nrdb-metric {
-      flex: 1;
-      min-width: 150px;
-      padding: 20px;
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      text-align: center;
-      border: 1px solid #f0f0f0;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .nrdb-metric:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-    
-    .nrdb-metric h4 {
-      margin-top: 0;
-      margin-bottom: 12px;
-      font-size: 15px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-    
-    .nrdb-value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #0066cc;
-    }
-    
-    #nrdb-chart-container {
-      width: 100%;
-      height: 220px;
-      margin: 25px 0;
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      border: 1px solid #f0f0f0;
-    }
-    
-    #nrdb-table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 14px;
-    }
-    
-    #nrdb-table th, #nrdb-table td {
-      border: 1px solid #eee;
-      padding: 10px 12px;
-      text-align: left;
-    }
-    
-    #nrdb-table tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    
-    #nrdb-table tr:hover {
-      background-color: #f0f7ff;
-    }
-    
-    #nrdb-table th {
-      padding-top: 14px;
-      padding-bottom: 14px;
-      background-color: #0066cc;
-      color: white;
-      position: sticky;
-      top: 0;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
+    /* NRDB Verification Screen Styles removed */
   </style>
 </head>
 <body>
@@ -371,7 +290,6 @@
       <div class="tab active" data-tab="simple">Simple Mode</div>
       <div class="tab" data-tab="bulk">Bulk Generation</div>
       <div class="tab" data-tab="results">Results</div>
-      <div class="tab" data-tab="verify">Verify NRDB</div>
     </div>
     
     <div class="tab-content active" id="simple-tab">
@@ -450,88 +368,7 @@
       </div>
     </div>
     
-    <div class="tab-content" id="verify-tab">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="margin: 0;">New Relic Data Verification</h3>
-        <div>
-          <button id="query-nrdb">Query NRDB</button>
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label for="nrql-query">NRQL Query:</label>
-        <select id="nrql-query-type">
-          <option value="current-user">Current User Data</option>
-          <option value="overall-nps">Overall NPS Score</option>
-          <option value="distribution">Score Distribution</option>
-          <option value="custom">Custom Query</option>
-        </select>
-        <textarea id="nrql-query" style="width: 100%; height: 80px; margin-top: 10px; font-family: monospace;">SELECT * FROM NpsResponsePoc WHERE userId = 'current-user-id' LIMIT 100</textarea>
-      </div>
-      
-      <div class="form-group">
-        <label for="nrql-timerange">Time Range:</label>
-        <select id="nrql-timerange">
-          <option value="30 MINUTES">Last 30 minutes</option>
-          <option value="1 HOUR">Last hour</option>
-          <option value="3 HOURS">Last 3 hours</option>
-          <option value="1 DAY" selected>Last day</option>
-          <option value="3 DAYS">Last 3 days</option>
-          <option value="7 DAYS">Last 7 days</option>
-        </select>
-      </div>
-      
-      <div id="query-status" class="hidden"></div>
-      
-      <div id="nrdb-result-container" class="hidden">
-        <div class="nrdb-summary">
-          <div class="nrdb-metric">
-            <h4>Total Responses</h4>
-            <div id="nrdb-total-responses" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>NPS Score</h4>
-            <div id="nrdb-nps-score" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>Promoters</h4>
-            <div id="nrdb-promoters" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>Passives</h4>
-            <div id="nrdb-passives" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>Detractors</h4>
-            <div id="nrdb-detractors" class="nrdb-value">0</div>
-          </div>
-        </div>
-        
-        <div id="nrdb-chart-container">
-          <!-- Chart will be inserted here -->
-        </div>
-        
-        <h4>Query Results</h4>
-        <div id="nrdb-results-table" class="results-container" style="max-height: 300px; overflow: auto;">
-          <table id="nrdb-table" style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr id="nrdb-table-header">
-                <th>Loading...</th>
-              </tr>
-            </thead>
-            <tbody id="nrdb-table-body">
-              <tr>
-                <td>Loading data...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <div id="nrdb-no-results" class="results-container">
-        <p>No data retrieved from New Relic. Run a query to see results.</p>
-      </div>
-    </div>
+    <!-- NRDB verification tab removed -->
   </div>
 
 

@@ -11,8 +11,8 @@ services:
       - NEW_RELIC_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
       - NEW_RELIC_APP_ID=${NEW_RELIC_APP_ID}
       - NEW_RELIC_APP_NAME=${NEW_RELIC_APP_NAME}
-      - NEW_RELIC_USER_API_KEY=NRBR-f955f1aae7b52c29774
-      - NEW_RELIC_ACCOUNT_ID=4430445
+      - NEW_RELIC_USER_API_KEY=${NEW_RELIC_USER_API_KEY}
+      - NEW_RELIC_ACCOUNT_ID=${NEW_RELIC_ACCOUNT_ID}
       - WEBHOOK_SIMULATOR_URL=http://webhook-simulator:3002
     volumes:
       - ./sample-app:/app
@@ -36,6 +36,7 @@ services:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=${INTEGRATION_SERVICE_PORT:-3001}
       - NEW_RELIC_INSERT_KEY=${NEW_RELIC_INSERT_KEY}
+      - NEW_RELIC_ACCOUNT_ID=${NEW_RELIC_ACCOUNT_ID}
       - QUALTRICS_WEBHOOK_SECRET=${QUALTRICS_WEBHOOK_SECRET}
     volumes:
       - ./integration-service:/app
