@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3002;
 
 // Constants
 const INTEGRATION_SERVICE_URL = process.env.INTEGRATION_SERVICE_URL || 'http://integration-service:3001/webhook/qualtrics';
-const WEBHOOK_SECRET = process.env.QUALTRICS_WEBHOOK_SECRET || 'your_webhook_secret_here';
+const WEBHOOK_SECRET = process.env.QUALTRICS_WEBHOOK_SECRET || 'demo_secret_key_for_webhooks_12345';
 const QUALTRICS_SURVEY_ID = 'SV_QualtricsSimulator';
 const QUALTRICS_OWNER_ID = 'UR_SimulatedOwner';
 
