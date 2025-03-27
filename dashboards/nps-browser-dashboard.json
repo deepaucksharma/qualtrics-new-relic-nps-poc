@@ -1,0 +1,121 @@
+{
+  "name": "NPS & Browser Experience Dashboard",
+  "description": "A comprehensive dashboard showing NPS scores correlated with browser performance metrics",
+  "pages": [
+    {
+      "name": "Overview",
+      "description": "Key NPS metrics and performance indicators",
+      "widgets": [
+        {
+          "title": "Overall NPS Score",
+          "visualization": "billboard",
+          "nrql": "SELECT (sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*)) as 'NPS Score' FROM NpsResponsePoc SINCE 30 days ago"
+        },
+        {
+          "title": "NPS Response Distribution",
+          "visualization": "pie",
+          "nrql": "SELECT count(*) FROM NpsResponsePoc FACET npsCategory SINCE 30 days ago"
+        },
+        {
+          "title": "NPS Score Trend",
+          "visualization": "line",
+          "nrql": "SELECT (sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*)) as 'NPS Score' FROM NpsResponsePoc FACET weekOf(timestamp) SINCE 12 weeks ago"
+        },
+        {
+          "title": "Page Load Time Distribution",
+          "visualization": "histogram",
+          "nrql": "SELECT histogram(duration, 200, 4000) FROM PageView SINCE 30 days ago"
+        }
+      ]
+    },
+    {
+      "name": "User Experience Correlations",
+      "description": "Correlations between performance metrics and NPS scores",
+      "widgets": [
+        {
+          "title": "Average Page Load by NPS Category",
+          "visualization": "bar",
+          "nrql": "SELECT average(duration) FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET NpsResponsePoc.npsCategory SINCE 30 days ago"
+        },
+        {
+          "title": "JavaScript Errors by NPS Category",
+          "visualization": "bar",
+          "nrql": "SELECT count(*) FROM JavaScriptError, NpsResponsePoc WHERE JavaScriptError.session = NpsResponsePoc.sessionId FACET NpsResponsePoc.npsCategory SINCE 30 days ago"
+        },
+        {
+          "title": "Average First Paint by NPS Category",
+          "visualization": "bar",
+          "nrql": "SELECT average(firstPaint) FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET NpsResponsePoc.npsCategory SINCE 30 days ago"
+        },
+        {
+          "title": "Load Time vs. NPS Score Correlation",
+          "visualization": "scatter",
+          "nrql": "SELECT average(duration) as 'Page Load Time', npsScore FROM NpsResponsePoc, PageView WHERE PageView.session = NpsResponsePoc.sessionId FACET npsScore SINCE 30 days ago"
+        }
+      ]
+    },
+    {
+      "name": "Page Performance Impact",
+      "description": "How different pages affect NPS scores",
+      "widgets": [
+        {
+          "title": "Promoter % by Page",
+          "visualization": "bar",
+          "nrql": "SELECT sum(CASE WHEN npsCategory = 'Promoter' THEN 1 ELSE 0 END) * 100.0 / count(*) as 'Promoter %' FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET PageView.pageUrl LIMIT 10 SINCE 30 days ago"
+        },
+        {
+          "title": "Detractor % by Page",
+          "visualization": "bar",
+          "nrql": "SELECT sum(CASE WHEN npsCategory = 'Detractor' THEN 1 ELSE 0 END) * 100.0 / count(*) as 'Detractor %' FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET PageView.pageUrl LIMIT 10 SINCE 30 days ago"
+        },
+        {
+          "title": "Slowest Pages by Load Time",
+          "visualization": "table",
+          "nrql": "SELECT average(duration) as 'Avg Load Time', count(*) as 'Page Views', sum(CASE WHEN npsCategory = 'Detractor' THEN 1 ELSE 0 END) * 100.0 / count(*) as 'Detractor %' FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET PageView.pageUrl LIMIT 20 SINCE 30 days ago"
+        }
+      ]
+    },
+    {
+      "name": "User Segment Analysis",
+      "description": "NPS scores across different user segments",
+      "widgets": [
+        {
+          "title": "NPS Score by Browser",
+          "visualization": "column",
+          "nrql": "SELECT (sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*)) as 'NPS Score' FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET PageView.userAgentName LIMIT 5 SINCE 30 days ago"
+        },
+        {
+          "title": "NPS Score by Device Type",
+          "visualization": "column",
+          "nrql": "SELECT (sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*)) as 'NPS Score' FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET PageView.deviceType SINCE 30 days ago"
+        },
+        {
+          "title": "NPS Score by Country",
+          "visualization": "column",
+          "nrql": "SELECT (sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*)) as 'NPS Score' FROM PageView, NpsResponsePoc WHERE PageView.session = NpsResponsePoc.sessionId FACET PageView.countryCode LIMIT 10 SINCE 30 days ago"
+        }
+      ]
+    },
+    {
+      "name": "Customer Comments Analysis",
+      "description": "Analysis of NPS comments and key themes",
+      "widgets": [
+        {
+          "title": "Common Words in Promoter Comments",
+          "visualization": "word_cloud",
+          "nrql": "SELECT wordCount(comment) FROM NpsResponsePoc WHERE npsCategory = 'Promoter' SINCE 30 days ago"
+        },
+        {
+          "title": "Common Words in Detractor Comments",
+          "visualization": "word_cloud",
+          "nrql": "SELECT wordCount(comment) FROM NpsResponsePoc WHERE npsCategory = 'Detractor' SINCE 30 days ago"
+        },
+        {
+          "title": "Recent Detractor Comments",
+          "visualization": "table",
+          "nrql": "SELECT timestamp, npsScore, comment, userId FROM NpsResponsePoc WHERE npsCategory = 'Detractor' LIMIT 20 SINCE 30 days ago"
+        }
+      ]
+    }
+  ]
+}
