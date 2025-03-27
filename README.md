@@ -246,6 +246,11 @@ qualtrics-new-relic-nps-poc/
 ├── docker-compose.yml       # Docker Compose configuration
 ├── .env.example             # Example environment variables
 ├── README.md                # Project documentation
+├── dashboards/              # New Relic dashboard definitions
+│   ├── README.md            # Dashboard documentation
+│   ├── INSTALLATION.md      # Installation guide
+│   ├── dashboard-preview.md # Visual preview of dashboards
+│   └── nps-browser-dashboard.json # Dashboard definition
 ├── docs/                    # Additional documentation
 │   ├── architecture.md      # Architecture overview
 │   ├── api-spec.md          # API specifications
@@ -301,6 +306,29 @@ When generating bulk data:
 ## Analyzing Data in New Relic
 
 Once you've generated NPS data, you can create custom dashboards in New Relic:
+
+### New Relic Dashboard Templates
+
+The project includes predefined dashboard definitions to help you visualize the correlation between NPS survey responses and Browser performance data:
+
+```
+qualtrics-new-relic-nps-poc/
+└── dashboards/                 # New Relic dashboard definitions
+    ├── README.md               # Dashboard documentation
+    ├── INSTALLATION.md         # Installation guide
+    ├── dashboard-preview.md    # Visual preview of dashboards
+    └── nps-browser-dashboard.json  # Dashboard definition
+```
+
+To import these dashboards into your New Relic account, follow these steps:
+
+1. Go to New Relic One
+2. Navigate to Dashboards
+3. Click "Import Dashboard"
+4. Paste the contents of the `nps-browser-dashboard.json` file
+5. Click "Import"
+
+For detailed installation instructions and dashboard descriptions, see the [dashboard documentation](./dashboards/README.md).
 
 ### Basic Queries
 
