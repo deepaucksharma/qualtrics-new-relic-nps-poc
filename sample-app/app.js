@@ -125,6 +125,14 @@ app.listen(PORT, () => {
 
 // HTML template generator
 function generateHtml(config) {
+  // Ensure config values are properly escaped for JavaScript
+  const safeConfig = {
+    NR_LICENSE_KEY: (config.NR_LICENSE_KEY || 'missing_license_key').replace(/"/g, '\\"'),
+    NR_APP_ID: (config.NR_APP_ID || 'missing_app_id').replace(/"/g, '\\"'),
+    NR_APP_NAME: (config.NR_APP_NAME || 'NpsPocSampleApp').replace(/"/g, '\\"'),
+    WEBHOOK_SIMULATOR_URL: (config.WEBHOOK_SIMULATOR_URL || 'http://localhost:3002').replace(/"/g, '\\"')
+  };
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -138,9 +146,9 @@ function generateHtml(config) {
     // Initialize New Relic with error handling
     try {
       window.NREUM||(NREUM={});NREUM.init={
-        licenseKey:"${config.NR_LICENSE_KEY}",
-        applicationID:"${config.NR_APP_ID}",
-        applicationName:"${config.NR_APP_NAME}"
+        licenseKey:"${safeConfig.NR_LICENSE_KEY}",
+        applicationID:"${safeConfig.NR_APP_ID}",
+        applicationName:"${safeConfig.NR_APP_NAME}"
       };
       console.log('New Relic configuration initialized');
     } catch (e) {
@@ -150,6 +158,7 @@ function generateHtml(config) {
   <script src="https://js-agent.newrelic.com/nr-1234.min.js" onerror="console.error('Failed to load New Relic script')"></script>
   
   <style>
+    /* Base styles with high browser compatibility */
     body { 
       font-family: Arial, sans-serif; 
       max-width: 1200px; 
@@ -350,9 +359,23 @@ function generateHtml(config) {
     <p>This information will be used to correlate Browser data with NPS responses:</p>
     
     <div class="id-display">
-      <p><strong>User ID:</strong> <span id="userIdDisplay">Loading...</span></p>
-      <p><strong>Session ID:</strong> <span id="sessionIdDisplay">Loading...</span></p>
+      <p><strong>User ID:</strong> <span id="userIdDisplay">Loading...</span>
+        <noscript>
+          <span style="color: #cc0000;"> JavaScript required to generate user ID</span>
+        </noscript>
+      </p>
+      <p><strong>Session ID:</strong> <span id="sessionIdDisplay">Loading...</span>
+        <noscript>
+          <span style="color: #cc0000;"> JavaScript required to capture session ID</span>
+        </noscript>
+      </p>
     </div>
+    <noscript>
+      <div style="color: #cc0000; background: #ffe6e6; padding: 10px; border: 1px solid #cc0000; margin-top: 10px;">
+        <strong>Warning:</strong> JavaScript is required for this application to function properly.
+        Please enable JavaScript in your browser settings and reload the page.
+      </div>
+    </noscript>
   </div>
   
   <div class="container">
