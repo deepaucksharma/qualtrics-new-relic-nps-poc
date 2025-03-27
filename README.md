@@ -36,7 +36,7 @@ The POC consists of three main components:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/qualtrics-new-relic-nps-poc.git
+git clone https://github.com/deepaucksharma/qualtrics-new-relic-nps-poc.git
 cd qualtrics-new-relic-nps-poc
 ```
 
@@ -75,7 +75,25 @@ NEW_RELIC_ACCOUNT_ID=your_account_id_here
 
 ### 3. Start the application
 
-#### Using npm scripts (recommended)
+#### Using Docker Compose (recommended)
+
+```bash
+docker-compose up
+```
+
+This will start all three services:
+- Sample Web App: http://localhost:3000
+- Integration Service: http://localhost:3001
+- Webhook Simulator API: http://localhost:3002
+
+If you make changes to the code, you can rebuild the containers:
+
+```bash
+docker-compose build --no-cache
+docker-compose up
+```
+
+#### Using npm scripts
 
 A root package.json has been added with convenient scripts:
 
@@ -94,17 +112,6 @@ npm run sample-app
 npm run integration-service
 npm run webhook-simulator
 ```
-
-#### Using Docker Compose directly
-
-```bash
-docker-compose up --build
-```
-
-This will start all three services:
-- Sample Web App: http://localhost:3000
-- Integration Service: http://localhost:3001
-- Webhook Simulator API: http://localhost:3002
 
 #### Running services individually (for development)
 
@@ -125,9 +132,23 @@ npm install
 npm start
 ```
 
+## Implementation Notes
+
+### Mock New Relic Integration
+
+For demonstration purposes, the Integration Service uses a mock implementation of the New Relic event publisher. In a production environment, you would need to:
+
+1. Install the @newrelic/telemetry-sdk dependency
+2. Replace the mock implementation in `integration-service/src/services/event-publisher.js` with the actual integration
+3. Provide a valid New Relic Insert API Key in the .env file
+
+### Browser Compatibility
+
+The Sample Web Application is designed to run in a server environment and uses ES6 features. We've made sure that template literals and other ES6 syntax are properly handled in the server-side code to prevent parsing errors.
+
 ## Using the Sample App Interface
 
-The sample app now includes a comprehensive dashboard for controlling the webhook simulator and viewing results. Access it at http://localhost:3000.
+The sample app includes a comprehensive dashboard for controlling the webhook simulator and viewing results. Access it at http://localhost:3000.
 
 ### 1. Identity Information
 
@@ -234,6 +255,8 @@ qualtrics-new-relic-nps-poc/
 │   ├── package.json         # Dependencies
 │   ├── server.js            # Main application entry point
 │   └── src/                 # Source code
+│       ├── services/
+│       │   └── event-publisher.js  # Mock implementation of New Relic event publisher
 ├── sample-app/              # Sample web application with NR Browser Agent
 │   ├── Dockerfile           # Container definition
 │   ├── package.json         # Dependencies
@@ -313,8 +336,10 @@ SINCE 1 day ago
 ### Common Issues:
 
 - **Services Not Starting**: Check that ports 3000, 3001, and 3002 are not in use
+- **Template Literal Errors**: If you see errors about unexpected tokens in the sample-app service, ensure you're using string concatenation instead of template literals in any server-side code
 - **Integration Service Not Receiving Webhooks**: Verify network connectivity between containers
 - **Events Not Appearing in New Relic**: Verify your Insert API Key and check the Integration Service logs
+- **Missing Dependencies**: If you see errors about missing modules, try rebuilding the containers with `docker-compose build --no-cache`
 - **Webhook Simulation Errors**: Check the results tab for detailed error information
 
 ## License
