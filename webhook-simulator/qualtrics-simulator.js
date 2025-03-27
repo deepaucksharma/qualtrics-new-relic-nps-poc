@@ -1,23 +1,15 @@
 // Qualtrics Webhook Simulator - Accurately mimics Qualtrics webhook format
 require('dotenv').config();
 const axios = require('axios');
-const crypto = require('crypto');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 
 // Configuration
 const INTEGRATION_SERVICE_URL = process.env.INTEGRATION_SERVICE_URL || 'http://localhost:3001/webhook/qualtrics';
-const WEBHOOK_SECRET = process.env.QUALTRICS_WEBHOOK_SECRET || 'your_webhook_secret_here';
 
 // Constants
 const QUALTRICS_SURVEY_ID = 'SV_QualtricsSimulator';
 const QUALTRICS_OWNER_ID = 'UR_SimulatedOwner';
-
-// Validate environment
-if (!WEBHOOK_SECRET) {
-  console.error(chalk.red('Error: QUALTRICS_WEBHOOK_SECRET environment variable is required'));
-  process.exit(1);
-}
 
 /**
  * Generate a Qualtrics-format response ID
@@ -27,16 +19,7 @@ function generateResponseId() {
   return 'R_' + Math.random().toString(36).substring(2, 12).toUpperCase();
 }
 
-/**
- * Generate HMAC signature exactly as Qualtrics would
- * Qualtrics uses HMAC-SHA256 with the shared secret
- */
-function generateSignature(payload) {
-  return crypto
-    .createHmac('sha256', WEBHOOK_SECRET)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-}
+
 
 /**
  * Format a timestamp in Qualtrics ISO format
@@ -142,10 +125,6 @@ function createQualtricsPayload(options) {
  */
 async function sendWebhook(payload) {
   console.log(chalk.blue('\nPreparing to send webhook to:'), chalk.cyan(INTEGRATION_SERVICE_URL));
-  
-  // Generate HMAC signature
-  const signature = generateSignature(payload);
-  console.log(chalk.blue('Generated HMAC signature:'), chalk.gray(signature));
 
   try {
     console.log(chalk.blue('\nSending webhook...'));
@@ -156,7 +135,6 @@ async function sendWebhook(payload) {
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-Qualtrics-Signature': signature,
           'User-Agent': 'Qualtrics/1.0'
         }
       }
@@ -309,7 +287,6 @@ async function main() {
   console.log(chalk.blue.bold('\n=== Qualtrics Webhook Simulator ==='));
   console.log(chalk.gray('This tool accurately simulates Qualtrics NPS webhook requests'));
   console.log(chalk.gray('Target URL:'), chalk.cyan(INTEGRATION_SERVICE_URL));
-  console.log(chalk.gray('Secret Key:'), chalk.cyan(WEBHOOK_SECRET ? '✓ Configured' : '✗ Missing'));
 
   // Ask for simulation mode
   const { mode } = await inquirer.prompt([

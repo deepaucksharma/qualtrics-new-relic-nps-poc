@@ -113,10 +113,109 @@ app.get('/api/config', (req, res) => {
   const config = {
     licenseKey: process.env.NEW_RELIC_LICENSE_KEY || 'missing_license_key',
     applicationID: process.env.NEW_RELIC_APP_ID || 'missing_app_id',
-    applicationName: process.env.NEW_RELIC_APP_NAME || 'NpsPocSampleApp'
+    applicationName: process.env.NEW_RELIC_APP_NAME || 'NpsPocSampleApp',
+    accountId: process.env.NEW_RELIC_ACCOUNT_ID || 'missing_account_id'
   };
   res.json(config);
 });
+
+// API endpoint to query New Relic
+app.post('/api/query-nrdb', async (req, res) => {
+  try {
+    const { query, timeRange } = req.body;
+    
+    // Get New Relic API key from environment variables
+    const apiKey = process.env.NEW_RELIC_USER_API_KEY;
+    const accountId = process.env.NEW_RELIC_ACCOUNT_ID;
+    
+    if (!apiKey || !accountId) {
+      return res.status(400).json({
+        success: false,
+        error: 'New Relic API key or account ID not configured',
+        demo: true,
+        demoData: generateDemoData(query)
+      });
+    }
+    
+    // In a real implementation, we would make an API call to New Relic
+    // For the POC, we'll use a mock response if the API key isn't configured
+    try {
+      const nrResponse = await axios.get(
+        `https://api.newrelic.com/v2/nrql?account_id=${accountId}&nrql=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'X-Api-Key': apiKey,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      res.json({
+        success: true,
+        data: nrResponse.data.results
+      });
+    } catch (apiError) {
+      console.error('Error calling New Relic API:', apiError.message);
+      // Fall back to demo data
+      res.json({
+        success: false,
+        error: `Error calling New Relic API: ${apiError.message}`,
+        demo: true,
+        demoData: generateDemoData(query)
+      });
+    }
+  } catch (error) {
+    console.error('Error processing NRDB query:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Generate demo data for NRDB verification
+function generateDemoData(query) {
+  // Check if query contains specific parts to determine what kind of data to generate
+  const isScoreQuery = query.toLowerCase().includes('npsscore');
+  const isDistributionQuery = query.toLowerCase().includes('facet') && query.toLowerCase().includes('npsscore');
+  const isOverallQuery = query.toLowerCase().includes('count(*)') || query.toLowerCase().includes('sum(');
+  
+  let demoData;
+  
+  if (isDistributionQuery) {
+    // Generate distribution data
+    demoData = Array.from({length: 11}, (_, i) => ({
+      npsScore: i,
+      count: Math.floor(Math.random() * 20) + (i >= 9 ? 15 : (i >= 7 ? 10 : 5))
+    }));
+  } else if (isOverallQuery) {
+    // Generate overall metrics
+    const promoters = Math.floor(Math.random() * 50) + 30;
+    const passives = Math.floor(Math.random() * 30) + 20;
+    const detractors = Math.floor(Math.random() * 40) + 10;
+    const total = promoters + passives + detractors;
+    
+    demoData = [{
+      totalResponses: total,
+      promoters: promoters,
+      passives: passives,
+      detractors: detractors,
+      npsScore: Math.round(((promoters - detractors) / total) * 100)
+    }];
+  } else {
+    // Generate individual response data
+    demoData = Array.from({length: 15}, (_, i) => ({
+      timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+      userId: 'demo_user_' + Math.floor(Math.random() * 1000),
+      sessionId: 'demo_session_' + Math.floor(Math.random() * 10000),
+      npsScore: Math.floor(Math.random() * 11),
+      npsCategory: ['Detractor', 'Passive', 'Promoter'][Math.floor(Math.random() * 3)],
+      npsComment: ['Great product!', 'Works well but could be better', 'Needs improvement'][Math.floor(Math.random() * 3)]
+    }));
+  }
+  
+  return demoData;
+}
 
 // Start the server
 app.listen(PORT, () => {

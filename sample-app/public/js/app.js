@@ -143,6 +143,11 @@ function initSimulator(userId, sessionId) {
       if (tabId === 'results') {
         fetchResults();
       }
+      
+      // Update NRQL query if verify tab
+      if (tabId === 'verify') {
+        updateNrqlQuery(userId, sessionId);
+      }
     });
   });
 
@@ -426,6 +431,324 @@ function showMessage(element, message, type = 'success') {
 
 // Start the process
 waitForNewRelic();
+
+// NRDB Verification Tab Functionality
+function updateNrqlQuery(userId, sessionId) {
+  const queryType = document.getElementById('nrql-query-type').value;
+  const queryTextArea = document.getElementById('nrql-query');
+  const timeRange = document.getElementById('nrql-timerange').value;
+  
+  let query = '';
+  
+  switch (queryType) {
+    case 'current-user':
+      query = `SELECT * FROM NpsResponsePoc WHERE userId = '${userId}' SINCE ${timeRange} AGO LIMIT 100`;
+      break;
+    case 'overall-nps':
+      query = `SELECT
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - 
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore,
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) AS promoters,
+  sum(CASE WHEN npsScore BETWEEN 7 AND 8 THEN 1 ELSE 0 END) AS passives,
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) AS detractors,
+  count(*) AS totalResponses
+FROM NpsResponsePoc SINCE ${timeRange} AGO`;
+      break;
+    case 'distribution':
+      query = `SELECT count(*) FROM NpsResponsePoc FACET npsScore SINCE ${timeRange} AGO`;
+      break;
+    case 'custom':
+      // Keep existing query
+      return;
+  }
+  
+  queryTextArea.value = query;
+}
+
+document.getElementById('nrql-query-type').addEventListener('change', function() {
+  const userId = document.getElementById('userIdDisplay').textContent;
+  const sessionId = document.getElementById('sessionIdDisplay').textContent;
+  updateNrqlQuery(userId, sessionId);
+});
+
+document.getElementById('nrql-timerange').addEventListener('change', function() {
+  const userId = document.getElementById('userIdDisplay').textContent;
+  const sessionId = document.getElementById('sessionIdDisplay').textContent;
+  updateNrqlQuery(userId, sessionId);
+});
+
+document.getElementById('query-nrdb').addEventListener('click', async function() {
+  const query = document.getElementById('nrql-query').value;
+  const timeRange = document.getElementById('nrql-timerange').value;
+  const statusEl = document.getElementById('query-status');
+  const noResultsEl = document.getElementById('nrdb-no-results');
+  const resultContainerEl = document.getElementById('nrdb-result-container');
+  
+  statusEl.innerHTML = 'Querying New Relic... <div class="loading"></div>';
+  statusEl.classList.remove('hidden', 'success-message', 'error-message');
+  
+  try {
+    const response = await fetch('/api/query-nrdb', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query,
+        timeRange
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success || result.demo) {
+      statusEl.textContent = result.demo ? 'Demo data - New Relic API not configured' : 'Query successful';
+      statusEl.classList.add(result.demo ? 'error-message' : 'success-message');
+      
+      // Show results container, hide no results message
+      resultContainerEl.classList.remove('hidden');
+      noResultsEl.classList.add('hidden');
+      
+      // Process and display the data
+      const data = result.demo ? result.demoData : result.data;
+      displayNrdbResults(data, query);
+    } else {
+      statusEl.textContent = 'Error: ' + (result.error || 'Unknown error');
+      statusEl.classList.add('error-message');
+      
+      // Hide results container, show no results message
+      resultContainerEl.classList.add('hidden');
+      noResultsEl.classList.remove('hidden');
+    }
+  } catch (error) {
+    statusEl.textContent = 'Error: ' + error.message;
+    statusEl.classList.add('error-message');
+    
+    // Hide results container, show no results message
+    resultContainerEl.classList.add('hidden');
+    noResultsEl.classList.remove('hidden');
+  }
+});
+
+function displayNrdbResults(data, query) {
+  if (!data || data.length === 0) {
+    document.getElementById('nrdb-result-container').classList.add('hidden');
+    document.getElementById('nrdb-no-results').classList.remove('hidden');
+    return;
+  }
+  
+  // Update summary metrics
+  updateNrdbSummary(data, query);
+  
+  // Update chart if applicable
+  updateNrdbChart(data, query);
+  
+  // Display tabular data
+  const tableHeaderEl = document.getElementById('nrdb-table-header');
+  const tableBodyEl = document.getElementById('nrdb-table-body');
+  
+  // Clear existing content
+  tableHeaderEl.innerHTML = '';
+  tableBodyEl.innerHTML = '';
+  
+  // Get column names from first result
+  const firstResult = data[0];
+  const columns = Object.keys(firstResult);
+  
+  // Create header row
+  const headerRow = document.createElement('tr');
+  columns.forEach(column => {
+    const th = document.createElement('th');
+    th.textContent = column;
+    headerRow.appendChild(th);
+  });
+  tableHeaderEl.appendChild(headerRow);
+  
+  // Create data rows
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    columns.forEach(column => {
+      const td = document.createElement('td');
+      let cellValue = row[column];
+      
+      // Format special values
+      if (column.toLowerCase().includes('timestamp') && typeof cellValue === 'string') {
+        // Format timestamps
+        try {
+          const date = new Date(cellValue);
+          cellValue = formatDate(date);
+        } catch (e) {
+          // Keep original if parsing fails
+        }
+      } else if (typeof cellValue === 'number' && column.toLowerCase().includes('score')) {
+        // Format scores to 2 decimal places
+        cellValue = cellValue.toFixed(2);
+      } else if (typeof cellValue === 'object') {
+        // Format objects as JSON
+        cellValue = JSON.stringify(cellValue);
+      }
+      
+      td.textContent = cellValue;
+      tr.appendChild(td);
+    });
+    tableBodyEl.appendChild(tr);
+  });
+}
+
+function updateNrdbSummary(data, query) {
+  // Default values
+  let totalResponses = 0;
+  let npsScore = 0;
+  let promoters = 0;
+  let passives = 0;
+  let detractors = 0;
+  
+  // Determine the data type from the query and first result
+  if (data.length > 0) {
+    if (data[0].hasOwnProperty('totalResponses')) {
+      // This is an overall summary result
+      totalResponses = data[0].totalResponses || 0;
+      npsScore = data[0].npsScore || 0;
+      promoters = data[0].promoters || 0;
+      passives = data[0].passives || 0;
+      detractors = data[0].detractors || 0;
+    } else if (data[0].hasOwnProperty('count')) {
+      // This is distribution data (facet query)
+      totalResponses = data.reduce((sum, item) => sum + (item.count || 0), 0);
+      
+      // Calculate NPS metrics from distribution
+      promoters = data
+        .filter(item => item.npsScore >= 9)
+        .reduce((sum, item) => sum + item.count, 0);
+        
+      passives = data
+        .filter(item => item.npsScore >= 7 && item.npsScore <= 8)
+        .reduce((sum, item) => sum + item.count, 0);
+        
+      detractors = data
+        .filter(item => item.npsScore <= 6)
+        .reduce((sum, item) => sum + item.count, 0);
+        
+      npsScore = Math.round(((promoters - detractors) / totalResponses) * 100);
+    } else {
+      // This is individual response data
+      totalResponses = data.length;
+      
+      // Count categories
+      data.forEach(item => {
+        if (item.npsScore >= 9 || item.npsCategory === 'Promoter') {
+          promoters++;
+        } else if ((item.npsScore >= 7 && item.npsScore <= 8) || item.npsCategory === 'Passive') {
+          passives++;
+        } else {
+          detractors++;
+        }
+      });
+      
+      // Calculate NPS score
+      npsScore = Math.round(((promoters - detractors) / totalResponses) * 100);
+    }
+  }
+  
+  // Update UI
+  document.getElementById('nrdb-total-responses').textContent = totalResponses;
+  document.getElementById('nrdb-nps-score').textContent = npsScore;
+  document.getElementById('nrdb-promoters').textContent = promoters;
+  document.getElementById('nrdb-passives').textContent = passives;
+  document.getElementById('nrdb-detractors').textContent = detractors;
+}
+
+function updateNrdbChart(data, query) {
+  const chartContainer = document.getElementById('nrdb-chart-container');
+  
+  // Determine if we have distribution data (facet query)
+  const isDistribution = data.length > 0 && data[0].hasOwnProperty('npsScore') && data[0].hasOwnProperty('count');
+  
+  if (isDistribution) {
+    // For simplicity, just create a bar chart using divs
+    chartContainer.innerHTML = '';
+    
+    // Find the maximum count for scaling
+    const maxCount = Math.max(...data.map(item => item.count));
+    
+    // Container for the chart
+    const chart = document.createElement('div');
+    chart.style.display = 'flex';
+    chart.style.alignItems = 'flex-end';
+    chart.style.height = '180px';
+    chart.style.width = '100%';
+    chart.style.gap = '4px';
+    
+    // Create bars for each score
+    // Make sure data is sorted by npsScore
+    const sortedData = [...data].sort((a, b) => a.npsScore - b.npsScore);
+    
+    sortedData.forEach(item => {
+      const barContainer = document.createElement('div');
+      barContainer.style.display = 'flex';
+      barContainer.style.flexDirection = 'column';
+      barContainer.style.alignItems = 'center';
+      barContainer.style.flex = '1';
+      
+      const bar = document.createElement('div');
+      const height = (item.count / maxCount) * 150;
+      
+      bar.style.width = '100%';
+      bar.style.height = `${height}px`;
+      bar.style.backgroundColor = getScoreColor(item.npsScore);
+      bar.style.borderRadius = '3px 3px 0 0';
+      
+      const label = document.createElement('div');
+      label.style.marginTop = '5px';
+      label.textContent = item.npsScore;
+      label.style.fontSize = '12px';
+      
+      const count = document.createElement('div');
+      count.style.marginTop = '2px';
+      count.textContent = item.count;
+      count.style.fontSize = '10px';
+      count.style.color = '#666';
+      
+      barContainer.appendChild(bar);
+      barContainer.appendChild(label);
+      barContainer.appendChild(count);
+      
+      chart.appendChild(barContainer);
+    });
+    
+    chartContainer.appendChild(chart);
+  } else {
+    // For other data types, show a category bar
+    const totalResponses = parseInt(document.getElementById('nrdb-total-responses').textContent) || 0;
+    const promoters = parseInt(document.getElementById('nrdb-promoters').textContent) || 0;
+    const passives = parseInt(document.getElementById('nrdb-passives').textContent) || 0;
+    const detractors = parseInt(document.getElementById('nrdb-detractors').textContent) || 0;
+    
+    if (totalResponses > 0) {
+      const promoterPercent = Math.round((promoters / totalResponses) * 100);
+      const passivePercent = Math.round((passives / totalResponses) * 100);
+      const detractorPercent = Math.round((detractors / totalResponses) * 100);
+      
+      chartContainer.innerHTML = `
+        <div class="nps-chart">
+          <div class="nps-segment nps-detractors" style="width: ${detractorPercent}%;">${detractorPercent}%</div>
+          <div class="nps-segment nps-passives" style="width: ${passivePercent}%;">${passivePercent}%</div>
+          <div class="nps-segment nps-promoters" style="width: ${promoterPercent}%;">${promoterPercent}%</div>
+        </div>
+      `;
+    } else {
+      chartContainer.innerHTML = '<p>No data available for visualization</p>';
+    }
+  }
+}
+
+function getScoreColor(score) {
+  if (score >= 9) {
+    return '#28a745'; // Promoter - green
+  } else if (score >= 7) {
+    return '#ffc107'; // Passive - yellow
+  } else {
+    return '#dc3545'; // Detractor - red
+  }
+}
 
 // Fallback if script completely fails to execute
 window.addEventListener('load', function() {

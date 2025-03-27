@@ -331,6 +331,61 @@ Set the `LOG_LEVEL=debug` environment variable to increase logging detail.
 3. For Docker, ensure environment variables are passed to containers
 4. Restart services after changing environment variables
 
+### NRDB Verification Issues
+
+#### Demo Mode When Expected Real Data
+
+**Symptoms:**
+- Message indicating "Demo data - New Relic API not configured"
+- Data looks unrealistic or doesn't match expected values
+- Results not matching what's visible in New Relic One
+
+**Solutions:**
+1. Configure `NEW_RELIC_USER_API_KEY` in your .env file
+2. Check that `NEW_RELIC_ACCOUNT_ID` is correct
+3. Verify that the API key has query permissions
+4. Restart the sample app container after updating environment variables
+
+#### NRQL Query Errors
+
+**Symptoms:**
+- Error message when executing a query
+- Empty result set when data is expected
+- NRQL syntax errors
+
+**Solutions:**
+1. Verify your NRQL query syntax is correct
+2. Ensure you're querying the correct event type (`NpsResponsePoc`)
+3. Check that the time range is appropriate
+4. Simplify your query to diagnose specific issues
+5. Test the query directly in New Relic One Query Builder first
+
+#### No Data Visualization
+
+**Symptoms:**
+- Results table has data but chart is empty or not rendering
+- Chart shows "No data available for visualization"
+- Chart displays but looks incorrect
+
+**Solutions:**
+1. Make sure query returns appropriate data for the chart type
+2. For score distribution, use a FACET query on npsScore
+3. Check that data values are within expected ranges
+4. Verify there are enough data points to visualize
+
+#### Summary Metrics Issues
+
+**Symptoms:**
+- Summary metrics show zeroes or unexpected values
+- NPS score calculation seems incorrect
+- Metrics don't match table data
+
+**Solutions:**
+1. Verify that response data includes valid npsScore values
+2. Check for sufficient data to calculate meaningful metrics
+3. For custom queries, ensure they include all needed fields
+4. Try using a predefined query template instead of custom query
+
 ## Getting Additional Help
 
 If you're unable to resolve an issue using this guide:
@@ -339,3 +394,4 @@ If you're unable to resolve an issue using this guide:
 2. Check the browser console for client-side errors
 3. Document the exact steps to reproduce the issue
 4. Create an issue in the GitHub repository with all collected information
+5. Include any NRQL queries you're using and their results

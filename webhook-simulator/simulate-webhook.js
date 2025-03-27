@@ -1,30 +1,15 @@
 // Webhook Simulator for Qualtrics-New Relic NPS Integration POC
 require('dotenv').config();
 const axios = require('axios');
-const crypto = require('crypto');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 
 // Configuration
 const INTEGRATION_SERVICE_URL = process.env.INTEGRATION_SERVICE_URL || 'http://localhost:3001/webhook/qualtrics';
-const WEBHOOK_SECRET = process.env.QUALTRICS_WEBHOOK_SECRET;
-
-if (!WEBHOOK_SECRET) {
-  console.error(chalk.red('Error: QUALTRICS_WEBHOOK_SECRET environment variable is required'));
-  process.exit(1);
-}
 
 // Generate a random response ID
 function generateResponseId() {
   return 'R_POC_SIM_' + Math.random().toString(36).substring(2, 10).toUpperCase();
-}
-
-// Generate HMAC signature
-function generateSignature(payload) {
-  return crypto
-    .createHmac('sha256', WEBHOOK_SECRET)
-    .update(JSON.stringify(payload))
-    .digest('hex');
 }
 
 // Main function
@@ -94,7 +79,7 @@ async function main() {
     // Generate random values
     const randomScore = Math.floor(Math.random() * 11); // 0-10
     const randomUserId = 'POC_USER_' + Math.floor(Math.random() * 10000);
-    const randomSessionId = crypto.randomBytes(8).toString('hex');
+    const randomSessionId = Math.random().toString(36).substring(2, 12);
 
     payload = {
       responseId: generateResponseId(),
@@ -120,11 +105,6 @@ async function main() {
   console.log(chalk.green('\nWebhook Payload:'));
   console.log(JSON.stringify(payload, null, 2));
 
-  // Generate HMAC signature
-  const signature = generateSignature(payload);
-  console.log(chalk.green('\nHMAC Signature:'));
-  console.log(signature);
-
   // Ask for confirmation
   const { confirm } = await inquirer.prompt([
     {
@@ -149,7 +129,7 @@ async function main() {
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-Qualtrics-Signature': signature
+          'User-Agent': 'Qualtrics/1.0'
         }
       }
     );

@@ -1,11 +1,9 @@
 // Script to send a specific NPS payload to the Integration Service
 require('dotenv').config();
 const axios = require('axios');
-const crypto = require('crypto');
 
 // Configuration
 const INTEGRATION_SERVICE_URL = process.env.INTEGRATION_SERVICE_URL || 'http://localhost:3001/webhook/qualtrics';
-const WEBHOOK_SECRET = process.env.QUALTRICS_WEBHOOK_SECRET || 'your_webhook_secret_here';
 
 // Default payload - can be modified as needed
 const payload = {
@@ -18,22 +16,10 @@ const payload = {
   "responseTimestamp": Date.now()
 };
 
-// Generate HMAC signature
-function generateSignature(payload) {
-  return crypto
-    .createHmac('sha256', WEBHOOK_SECRET)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-}
-
 // Send the webhook
 async function sendWebhook() {
   console.log('Sending webhook payload to:', INTEGRATION_SERVICE_URL);
   console.log('Payload:', JSON.stringify(payload, null, 2));
-  
-  // Generate HMAC signature
-  const signature = generateSignature(payload);
-  console.log('HMAC Signature:', signature);
 
   try {
     const response = await axios.post(
@@ -41,8 +27,7 @@ async function sendWebhook() {
       payload,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'X-Qualtrics-Signature': signature
+          'Content-Type': 'application/json'
         }
       }
     );

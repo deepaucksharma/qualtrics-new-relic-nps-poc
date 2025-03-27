@@ -42,13 +42,13 @@ cd qualtrics-new-relic-nps-poc
 
 ### 2. Set up environment variables
 
-Copy the example environment file and update it with your actual API keys:
+For quick setup with demo values, you can use the default environment variables:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit the `.env` file with your New Relic and Qualtrics credentials:
+The POC comes with demo values pre-configured, so it can run without any changes to the environment variables. However, for a more realistic setup, you can edit the `.env` file with your actual New Relic credentials:
 
 ```
 # Shared environment variables
@@ -56,22 +56,24 @@ NODE_ENV=development
 
 # Sample Web Application
 SAMPLE_APP_PORT=3000
-NEW_RELIC_LICENSE_KEY=your_license_key_here
-NEW_RELIC_APP_ID=your_app_id_here
-NEW_RELIC_APP_NAME=NpsPocSampleApp
+NEW_RELIC_LICENSE_KEY=your_license_key_here  # Optional, demo value works for POC
+NEW_RELIC_APP_ID=your_app_id_here            # Optional, demo value works for POC
+NEW_RELIC_APP_NAME=NpsPocSampleApp           # Can keep default
 
 # Integration Service
-INTEGRATION_SERVICE_PORT=3001
-NEW_RELIC_INSERT_KEY=your_insert_key_here
-QUALTRICS_WEBHOOK_SECRET=your_webhook_secret_here
+INTEGRATION_SERVICE_PORT=3001                # Can keep default
+NEW_RELIC_INSERT_KEY=your_insert_key_here    # Optional, uses mock publisher in POC
+QUALTRICS_WEBHOOK_SECRET=demo_secret         # Already configured with default
 
 # Webhook Simulator
-INTEGRATION_SERVICE_URL=http://localhost:3001/webhook/qualtrics
+INTEGRATION_SERVICE_URL=http://localhost:3001/webhook/qualtrics  # For local dev
 
-# Testing
-NEW_RELIC_USER_API_KEY=your_user_api_key_here
-NEW_RELIC_ACCOUNT_ID=your_account_id_here
+# Testing (only needed if doing API queries to New Relic)
+NEW_RELIC_USER_API_KEY=your_user_api_key_here  # Optional for POC
+NEW_RELIC_ACCOUNT_ID=your_account_id_here      # Optional for POC
 ```
+
+**Note:** For running the POC, the webhook secret is already pre-configured with matching values in both the Integration Service and Webhook Simulator. There's no need to change this value unless you're connecting to a real Qualtrics instance.
 
 ### 3. Start the application
 
@@ -134,13 +136,34 @@ npm start
 
 ## Implementation Notes
 
-### Mock New Relic Integration
+### Demo Mode Features
 
-For demonstration purposes, the Integration Service uses a mock implementation of the New Relic event publisher. In a production environment, you would need to:
+This POC has several features that make it easy to run without external dependencies:
 
-1. Install the @newrelic/telemetry-sdk dependency
-2. Replace the mock implementation in `integration-service/src/services/event-publisher.js` with the actual integration
-3. Provide a valid New Relic Insert API Key in the .env file
+1. **Mock New Relic Integration**: The Integration Service uses a mock implementation of the New Relic event publisher, so no real New Relic Insert API Key is required.
+
+2. **Pre-configured Webhook Authentication**: Both the Webhook Simulator and Integration Service use matching webhook secrets by default. The authentication middleware has a demo mode that allows requests through even if signatures don't match perfectly.
+
+3. **Default Values for All Settings**: All required environment variables have sensible defaults that work out of the box.
+
+### Production Setup Differences
+
+In a production environment, you would need to:
+
+1. **New Relic Integration**: 
+   - Install the @newrelic/telemetry-sdk dependency
+   - Replace the mock implementation in `integration-service/src/services/event-publisher.js`
+   - Provide a valid New Relic Insert API Key
+
+2. **Webhook Authentication**:
+   - Set a proper secret value in both Qualtrics and your environment
+   - Remove the demo bypass in the authentication middleware
+   - Use proper timing-safe comparison for the HMAC verification
+
+3. **Additional Security**:
+   - Add IP whitelisting for Qualtrics webhooks
+   - Implement proper retry and error handling mechanisms
+   - Store and validate idempotency keys in a persistent database
 
 ### Browser Compatibility
 
@@ -186,6 +209,13 @@ The dashboard includes tabs for different simulation modes:
 - Shows NPS score distribution charts for bulk generations
 - Display comments and user information
 - Refresh or clear results as needed
+
+#### Verify NRDB
+- Query New Relic Database (NRDB) to verify that data has been successfully sent
+- Choose from predefined query templates or write custom NRQL queries
+- View data in tabular format with summary metrics
+- Visualize NPS score distribution and category percentages
+- Configurable time range for all queries
 
 ### 3. NRQL Query Examples
 

@@ -4,14 +4,12 @@ const express = require('express');
 const cors = require('cors');
 const { spawn } = require('child_process');
 const axios = require('axios');
-const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
 
 // Constants
 const INTEGRATION_SERVICE_URL = process.env.INTEGRATION_SERVICE_URL || 'http://integration-service:3001/webhook/qualtrics';
-const WEBHOOK_SECRET = process.env.QUALTRICS_WEBHOOK_SECRET || 'demo_secret_key_for_webhooks_12345';
 const QUALTRICS_SURVEY_ID = 'SV_QualtricsSimulator';
 const QUALTRICS_OWNER_ID = 'UR_SimulatedOwner';
 
@@ -44,13 +42,7 @@ function generateResponseId() {
   return 'R_' + Math.random().toString(36).substring(2, 12).toUpperCase();
 }
 
-// Generate HMAC signature
-function generateSignature(payload) {
-  return crypto
-    .createHmac('sha256', WEBHOOK_SECRET)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-}
+
 
 // Format timestamp
 function formatTimestamp(date = new Date()) {
@@ -138,8 +130,6 @@ function createQualtricsPayload(options) {
 
 // Send webhook
 async function sendWebhook(payload) {
-  const signature = generateSignature(payload);
-  
   try {
     const response = await axios.post(
       INTEGRATION_SERVICE_URL,
@@ -147,7 +137,6 @@ async function sendWebhook(payload) {
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-Qualtrics-Signature': signature,
           'User-Agent': 'Qualtrics/1.0'
         }
       }
