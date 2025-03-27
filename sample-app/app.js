@@ -140,20 +140,47 @@ app.post('/api/query-nrdb', async (req, res) => {
     // In a real implementation, we would make an API call to New Relic
     // For the POC, we'll use a mock response if the API key isn't configured
     try {
-      const nrResponse = await axios.get(
-        `https://api.newrelic.com/v2/nrql?account_id=${accountId}&nrql=${encodeURIComponent(query)}`,
+      // Use correct New Relic Query API endpoint
+      const nrResponse = await axios.post(
+        `https://api.newrelic.com/graphql`,
+        {
+          query: `{
+            actor {
+              account(id: ${accountId}) {
+                nrql(query: "${query.replace(/"/g, '\\"')}") {
+                  results
+                }
+              }
+            }
+          }`
+        },
         {
           headers: {
-            'X-Api-Key': apiKey,
-            'Accept': 'application/json'
+            'API-Key': apiKey,
+            'Content-Type': 'application/json'
           }
         }
       );
       
-      res.json({
-        success: true,
-        data: nrResponse.data.results
-      });
+      // Handle the response format from GraphQL API
+      if (nrResponse.data && 
+          nrResponse.data.data && 
+          nrResponse.data.data.actor && 
+          nrResponse.data.data.actor.account && 
+          nrResponse.data.data.actor.account.nrql) {
+        res.json({
+          success: true,
+          data: nrResponse.data.data.actor.account.nrql.results
+        });
+      } else {
+        console.error('Unexpected New Relic API response format:', JSON.stringify(nrResponse.data));
+        res.json({
+          success: false,
+          error: 'Unexpected API response format',
+          demo: true,
+          demoData: generateDemoData(query)
+        });
+      }
     } catch (apiError) {
       console.error('Error calling New Relic API:', apiError.message);
       // Fall back to demo data

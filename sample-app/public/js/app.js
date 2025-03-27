@@ -190,36 +190,7 @@ function initSimulator(userId, sessionId) {
     }
   });
   
-  // Set up random mode
-  document.getElementById('send-random').addEventListener('click', async () => {
-    const randomCount = parseInt(document.getElementById('random-count').value);
-    const statusEl = document.getElementById('random-status');
-    
-    statusEl.innerHTML = 'Sending ' + randomCount + ' random responses... <div class="loading"></div>';
-    statusEl.classList.remove('hidden', 'success-message', 'error-message');
-    
-    try {
-      const response = await fetch('/api/simulate/random', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          sessionId,
-          count: randomCount
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        showMessage(statusEl, result.count + ' responses sent successfully!', 'success');
-      } else {
-        showMessage(statusEl, 'Error: ' + (result.error || 'Unknown error'), 'error');
-      }
-    } catch (error) {
-      showMessage(statusEl, 'Error: ' + error.message, 'error');
-    }
-  });
+  // Random mode has been removed
   
   // Set up bulk mode
   document.getElementById('send-bulk').addEventListener('click', async () => {
