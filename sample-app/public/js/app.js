@@ -190,7 +190,36 @@ function initSimulator(userId, sessionId) {
     }
   });
   
-  // Random mode has been removed
+  // Set up random mode
+  document.getElementById('send-random').addEventListener('click', async () => {
+    const randomCount = parseInt(document.getElementById('random-count').value);
+    const statusEl = document.getElementById('random-status');
+    
+    statusEl.innerHTML = 'Sending ' + randomCount + ' random responses... <div class="loading"></div>';
+    statusEl.classList.remove('hidden', 'success-message', 'error-message');
+    
+    try {
+      const response = await fetch('/api/simulate/random', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          sessionId,
+          count: randomCount
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showMessage(statusEl, result.count + ' responses sent successfully!', 'success');
+      } else {
+        showMessage(statusEl, 'Error: ' + (result.error || 'Unknown error'), 'error');
+      }
+    } catch (error) {
+      showMessage(statusEl, 'Error: ' + error.message, 'error');
+    }
+  });
   
   // Set up bulk mode
   document.getElementById('send-bulk').addEventListener('click', async () => {
@@ -268,6 +297,23 @@ function initSimulator(userId, sessionId) {
   ['promoter-percent', 'passive-percent', 'detractor-percent'].forEach(id => {
     document.getElementById(id).addEventListener('input', validateNpsPercentages);
   });
+  
+  // Setup NRDB Verification Tab functionality
+  if (document.getElementById('nrql-query-type') && document.getElementById('query-nrdb')) {
+    updateNrqlQuery(userId, sessionId);
+  
+    document.getElementById('nrql-query-type').addEventListener('change', function() {
+      updateNrqlQuery(userId, sessionId);
+    });
+  
+    document.getElementById('nrql-timerange').addEventListener('change', function() {
+      updateNrqlQuery(userId, sessionId);
+    });
+  
+    document.getElementById('query-nrdb').addEventListener('click', function() {
+      queryNrdb();
+    });
+  }
 }
 
 function validateNpsPercentages() {
@@ -403,11 +449,16 @@ function showMessage(element, message, type = 'success') {
 // Start the process
 waitForNewRelic();
 
-// NRDB Verification Tab Functionality
+// NRDB Verification Tab functionality
 function updateNrqlQuery(userId, sessionId) {
-  const queryType = document.getElementById('nrql-query-type').value;
+  const queryTypeEl = document.getElementById('nrql-query-type');
   const queryTextArea = document.getElementById('nrql-query');
-  const timeRange = document.getElementById('nrql-timerange').value;
+  const timeRangeEl = document.getElementById('nrql-timerange');
+  
+  if (!queryTypeEl || !queryTextArea || !timeRangeEl) return;
+  
+  const queryType = queryTypeEl.value;
+  const timeRange = timeRangeEl.value;
   
   let query = '';
   
@@ -436,24 +487,17 @@ FROM NpsResponsePoc SINCE ${timeRange} AGO`;
   queryTextArea.value = query;
 }
 
-document.getElementById('nrql-query-type').addEventListener('change', function() {
-  const userId = document.getElementById('userIdDisplay').textContent;
-  const sessionId = document.getElementById('sessionIdDisplay').textContent;
-  updateNrqlQuery(userId, sessionId);
-});
-
-document.getElementById('nrql-timerange').addEventListener('change', function() {
-  const userId = document.getElementById('userIdDisplay').textContent;
-  const sessionId = document.getElementById('sessionIdDisplay').textContent;
-  updateNrqlQuery(userId, sessionId);
-});
-
-document.getElementById('query-nrdb').addEventListener('click', async function() {
-  const query = document.getElementById('nrql-query').value;
-  const timeRange = document.getElementById('nrql-timerange').value;
+async function queryNrdb() {
+  const queryEl = document.getElementById('nrql-query');
+  const timeRangeEl = document.getElementById('nrql-timerange');
   const statusEl = document.getElementById('query-status');
   const noResultsEl = document.getElementById('nrdb-no-results');
   const resultContainerEl = document.getElementById('nrdb-result-container');
+  
+  if (!queryEl || !timeRangeEl || !statusEl || !noResultsEl || !resultContainerEl) return;
+  
+  const query = queryEl.value;
+  const timeRange = timeRangeEl.value;
   
   statusEl.innerHTML = 'Querying New Relic... <div class="loading"></div>';
   statusEl.classList.remove('hidden', 'success-message', 'error-message');
@@ -484,8 +528,7 @@ document.getElementById('query-nrdb').addEventListener('click', async function()
       noResultsEl.classList.add('hidden');
       
       // Process and display the data
-      const data = result.data;
-      displayNrdbResults(data, query);
+      displayNrdbResults(result.data, query);
     } else {
       statusEl.textContent = 'Error: ' + (result.error || 'Unknown error');
       statusEl.classList.add('error-message');
@@ -502,15 +545,15 @@ document.getElementById('query-nrdb').addEventListener('click', async function()
     resultContainerEl.classList.add('hidden');
     noResultsEl.classList.remove('hidden');
   }
-});
+}
 
 function displayNrdbResults(data, query) {
-  // Check if we have a demo message to display
-  const queryStatusEl = document.getElementById('query-status');
-  
   if (!data || data.length === 0) {
-    document.getElementById('nrdb-result-container').classList.add('hidden');
-    document.getElementById('nrdb-no-results').classList.remove('hidden');
+    const resultContainer = document.getElementById('nrdb-result-container');
+    const noResults = document.getElementById('nrdb-no-results');
+    
+    if (resultContainer) resultContainer.classList.add('hidden');
+    if (noResults) noResults.classList.remove('hidden');
     return;
   }
   
@@ -523,6 +566,8 @@ function displayNrdbResults(data, query) {
   // Display tabular data
   const tableHeaderEl = document.getElementById('nrdb-table-header');
   const tableBodyEl = document.getElementById('nrdb-table-body');
+  
+  if (!tableHeaderEl || !tableBodyEl) return;
   
   // Clear existing content
   tableHeaderEl.innerHTML = '';
@@ -573,6 +618,15 @@ function displayNrdbResults(data, query) {
 }
 
 function updateNrdbSummary(data, query) {
+  // Elements that need to be updated
+  const totalResponsesEl = document.getElementById('nrdb-total-responses');
+  const npsScoreEl = document.getElementById('nrdb-nps-score');
+  const promotersEl = document.getElementById('nrdb-promoters');
+  const passivesEl = document.getElementById('nrdb-passives');
+  const detractorsEl = document.getElementById('nrdb-detractors');
+  
+  if (!totalResponsesEl || !npsScoreEl || !promotersEl || !passivesEl || !detractorsEl) return;
+  
   // Default values
   let totalResponses = 0;
   let npsScore = 0;
@@ -606,7 +660,7 @@ function updateNrdbSummary(data, query) {
         .filter(item => item.npsScore <= 6)
         .reduce((sum, item) => sum + item.count, 0);
         
-      npsScore = Math.round(((promoters - detractors) / totalResponses) * 100);
+      npsScore = totalResponses ? Math.round(((promoters - detractors) / totalResponses) * 100) : 0;
     } else {
       // This is individual response data
       totalResponses = data.length;
@@ -623,20 +677,21 @@ function updateNrdbSummary(data, query) {
       });
       
       // Calculate NPS score
-      npsScore = Math.round(((promoters - detractors) / totalResponses) * 100);
+      npsScore = totalResponses ? Math.round(((promoters - detractors) / totalResponses) * 100) : 0;
     }
   }
   
   // Update UI
-  document.getElementById('nrdb-total-responses').textContent = totalResponses;
-  document.getElementById('nrdb-nps-score').textContent = npsScore;
-  document.getElementById('nrdb-promoters').textContent = promoters;
-  document.getElementById('nrdb-passives').textContent = passives;
-  document.getElementById('nrdb-detractors').textContent = detractors;
+  totalResponsesEl.textContent = totalResponses;
+  npsScoreEl.textContent = npsScore;
+  promotersEl.textContent = promoters;
+  passivesEl.textContent = passives;
+  detractorsEl.textContent = detractors;
 }
 
 function updateNrdbChart(data, query) {
   const chartContainer = document.getElementById('nrdb-chart-container');
+  if (!chartContainer) return;
   
   // Determine if we have distribution data (facet query)
   const isDistribution = data.length > 0 && data[0].hasOwnProperty('npsScore') && data[0].hasOwnProperty('count');

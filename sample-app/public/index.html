@@ -14,206 +14,150 @@
   
   <style>
     body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
-      max-width: 1100px; 
+      font-family: Arial, sans-serif; 
+      max-width: 1200px; 
       margin: 0 auto; 
       padding: 20px; 
       line-height: 1.6;
-      color: #333;
-      background-color: #fafafa;
-    }
-    h1, h2, h3 {
-      color: #444;
-      margin-top: 0;
     }
     .container { 
-      background: #ffffff; 
-      padding: 25px; 
-      border-radius: 8px; 
+      background: #f5f5f5; 
+      padding: 20px; 
+      border-radius: 5px; 
       margin: 20px 0; 
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      border: 1px solid #f0f0f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .id-display { 
-      background: #f7f7f7; 
-      padding: 15px; 
-      border-radius: 6px; 
+      background: #e0e0e0; 
+      padding: 10px; 
+      border-radius: 3px; 
       font-family: monospace;
       word-break: break-all;
-      border: 1px solid #eee;
     }
     button { 
       background: #0066cc; 
       color: white; 
       border: none; 
-      padding: 10px 16px; 
+      padding: 10px 15px; 
       cursor: pointer; 
-      border-radius: 4px;
-      font-weight: 600;
-      margin-right: 8px;
-      margin-bottom: 8px;
-      transition: background-color 0.2s, transform 0.1s;
+      border-radius: 3px;
+      font-weight: bold;
+      margin-right: 5px;
+      margin-bottom: 5px;
     }
     button:hover {
       background: #0055aa;
-      transform: translateY(-1px);
-    }
-    button:active {
-      transform: translateY(1px);
     }
     button:disabled {
       background: #cccccc;
       cursor: not-allowed;
-      transform: none;
     }
     .danger-button {
-      background: #dc3545;
+      background: #cc0000;
     }
     .danger-button:hover {
-      background: #c82333;
+      background: #aa0000;
     }
     input, select, textarea {
-      padding: 10px;
+      padding: 8px;
       margin: 5px 0;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-      transition: border-color 0.2s;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: #0066cc;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(0,102,204,0.1);
+      border: 1px solid #ccc;
+      border-radius: 3px;
     }
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     .form-group label {
       display: block;
-      margin-bottom: 6px;
-      font-weight: 600;
-      font-size: 15px;
+      margin-bottom: 5px;
+      font-weight: bold;
     }
     .tabs {
       display: flex;
-      border-bottom: 1px solid #ddd;
-      margin-bottom: 25px;
-      background: #f9f9f9;
-      border-radius: 8px 8px 0 0;
-      padding: 0 8px;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 20px;
     }
     .tab {
-      padding: 12px 20px;
+      padding: 10px 15px;
       cursor: pointer;
       border: 1px solid transparent;
       border-bottom: none;
-      margin-right: 2px;
-      border-radius: 8px 8px 0 0;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-    .tab:hover {
-      background: #f0f0f0;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
     }
     .tab.active {
-      background: #ffffff;
-      border-color: #ddd;
-      font-weight: 600;
-      color: #0066cc;
-      border-top: 2px solid #0066cc;
-      margin-bottom: -1px;
+      background: #f5f5f5;
+      border-color: #ccc;
+      font-weight: bold;
     }
     .tab-content {
       display: none;
-      padding: 5px;
     }
     .tab-content.active {
       display: block;
-      animation: fadeIn 0.3s;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
     }
     .results-container {
       max-height: 500px;
       overflow-y: auto;
-      border: 1px solid #eee;
-      border-radius: 6px;
-      background: #fcfcfc;
     }
     .result-item {
       border: 1px solid #eee;
-      padding: 14px;
-      margin: 8px;
-      border-radius: 6px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-      transition: transform 0.2s;
-    }
-    .result-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 3px;
     }
     .result-item.success {
-      border-left: 5px solid #28a745;
+      border-left: 5px solid green;
     }
     .result-item.error {
-      border-left: 5px solid #dc3545;
+      border-left: 5px solid red;
     }
     .result-item.summary {
-      border-left: 5px solid #0066cc;
-      background-color: #f8fbff;
+      border-left: 5px solid blue;
+      background-color: #f0f8ff;
     }
     .result-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 5px;
     }
     .result-time {
-      font-size: 0.85em;
-      color: #777;
+      font-size: 0.8em;
+      color: #666;
     }
     .result-label {
       display: inline-block;
-      padding: 4px 8px;
-      border-radius: 15px;
-      font-size: 0.75em;
-      margin-right: 6px;
-      font-weight: 600;
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-size: 0.8em;
+      margin-right: 5px;
     }
     .label-promoter {
-      background-color: #e8f7e8;
-      color: #28a745;
+      background-color: #d4f7d4;
+      color: #007700;
     }
     .label-passive {
-      background-color: #fff9e6;
-      color: #ffc107;
+      background-color: #fff7d4;
+      color: #777700;
     }
     .label-detractor {
-      background-color: #fbeded;
-      color: #dc3545;
+      background-color: #f7d4d4;
+      color: #770000;
     }
     .label-type {
-      background-color: #e6f0fa;
-      color: #0066cc;
+      background-color: #d4e6f7;
+      color: #000077;
     }
     .nps-chart {
       display: flex;
-      margin: 15px 0;
-      height: 30px;
-      border-radius: 4px;
-      overflow: hidden;
+      margin: 10px 0;
+      height: 25px;
     }
     .nps-segment {
       text-align: center;
       color: white;
-      line-height: 30px;
+      line-height: 25px;
       font-size: 0.9em;
-      font-weight: 600;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
     .nps-promoters {
       background-color: #28a745;
@@ -246,107 +190,18 @@
       word-break: break-all; 
     }
     pre {
-      background: #f8f8f8;
-      padding: 16px;
-      border-radius: 6px;
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 3px;
       overflow-x: auto;
-      border: 1px solid #eee;
-      font-size: 14px;
     }
     .success-message {
-      color: #28a745;
-      margin-left: 12px;
-      font-weight: 500;
-      animation: fadeIn 0.5s;
+      color: green;
+      margin-left: 10px;
     }
     .error-message {
-      color: #dc3545;
-      margin-left: 12px;
-      font-weight: 500;
-      animation: fadeIn 0.5s;
-    }
-    
-    /* NRDB Verification Screen Styles */
-    .nrdb-summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-    
-    .nrdb-metric {
-      flex: 1;
-      min-width: 150px;
-      padding: 20px;
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      text-align: center;
-      border: 1px solid #f0f0f0;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .nrdb-metric:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-    
-    .nrdb-metric h4 {
-      margin-top: 0;
-      margin-bottom: 12px;
-      font-size: 15px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-    
-    .nrdb-value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #0066cc;
-    }
-    
-    #nrdb-chart-container {
-      width: 100%;
-      height: 220px;
-      margin: 25px 0;
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      border: 1px solid #f0f0f0;
-    }
-    
-    #nrdb-table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 14px;
-    }
-    
-    #nrdb-table th, #nrdb-table td {
-      border: 1px solid #eee;
-      padding: 10px 12px;
-      text-align: left;
-    }
-    
-    #nrdb-table tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    
-    #nrdb-table tr:hover {
-      background-color: #f0f7ff;
-    }
-    
-    #nrdb-table th {
-      padding-top: 14px;
-      padding-bottom: 14px;
-      background-color: #0066cc;
-      color: white;
-      position: sticky;
-      top: 0;
-      font-weight: 600;
-      letter-spacing: 0.3px;
+      color: red;
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -369,6 +224,7 @@
     
     <div class="tabs">
       <div class="tab active" data-tab="simple">Simple Mode</div>
+      <div class="tab" data-tab="random">Random Mode</div>
       <div class="tab" data-tab="bulk">Bulk Generation</div>
       <div class="tab" data-tab="results">Results</div>
       <div class="tab" data-tab="verify">Verify NRDB</div>
@@ -388,7 +244,20 @@
       <span id="simple-status" class="success-message hidden"></span>
     </div>
     
-
+    <div class="tab-content" id="random-tab">
+      <p>Generate responses with realistic score distribution and appropriate comments:</p>
+      <div class="form-group">
+        <label for="random-count">Number of responses:</label>
+        <select id="random-count">
+          <option value="1">1 response</option>
+          <option value="5">5 responses</option>
+          <option value="10">10 responses</option>
+          <option value="25">25 responses</option>
+        </select>
+      </div>
+      <button id="send-random">Generate Random Responses</button>
+      <span id="random-status" class="success-message hidden"></span>
+    </div>
     
     <div class="tab-content" id="bulk-tab">
       <p>Generate a large dataset of NPS responses over time with realistic distribution:</p>
@@ -451,26 +320,16 @@
     </div>
     
     <div class="tab-content" id="verify-tab">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="margin: 0;">New Relic Data Verification</h3>
-        <div>
-          <button id="query-nrdb">Query NRDB</button>
-        </div>
-      </div>
-      
+      <p>Query New Relic to verify that NPS data has been correctly sent and stored:</p>
       <div class="form-group">
-        <label for="nrql-query">NRQL Query:</label>
+        <label for="nrql-query-type">Query Type:</label>
         <select id="nrql-query-type">
-          <option value="current-user">Current User Data</option>
+          <option value="current-user">Current User Responses</option>
           <option value="overall-nps">Overall NPS Score</option>
           <option value="distribution">Score Distribution</option>
           <option value="custom">Custom Query</option>
         </select>
-        <textarea id="nrql-query" style="width: 100%; height: 80px; margin-top: 10px; font-family: monospace;">SELECT * FROM NpsResponsePoc WHERE userId = 'current-user-id' LIMIT 100</textarea>
-      </div>
-      
-      <div class="form-group">
-        <label for="nrql-timerange">Time Range:</label>
+        <label for="nrql-timerange" style="display: inline-block; margin-left: 20px;">Time Range:</label>
         <select id="nrql-timerange">
           <option value="30 MINUTES">Last 30 minutes</option>
           <option value="1 HOUR">Last hour</option>
@@ -480,61 +339,99 @@
           <option value="7 DAYS">Last 7 days</option>
         </select>
       </div>
+      <div class="form-group">
+        <label for="nrql-query">NRQL Query:</label>
+        <textarea id="nrql-query" rows="3" style="width: 100%; font-family: monospace;"></textarea>
+      </div>
+      <button id="query-nrdb">Query NRDB</button>
+      <span id="query-status" class="hidden"></span>
       
-      <div id="query-status" class="hidden"></div>
-      
-      <div id="nrdb-result-container" class="hidden">
-        <div class="nrdb-summary">
-          <div class="nrdb-metric">
-            <h4>Total Responses</h4>
-            <div id="nrdb-total-responses" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>NPS Score</h4>
-            <div id="nrdb-nps-score" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>Promoters</h4>
-            <div id="nrdb-promoters" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>Passives</h4>
-            <div id="nrdb-passives" class="nrdb-value">0</div>
-          </div>
-          <div class="nrdb-metric">
-            <h4>Detractors</h4>
-            <div id="nrdb-detractors" class="nrdb-value">0</div>
+      <!-- Results display -->
+      <div id="nrdb-result-container" class="hidden" style="margin-top: 20px;">
+        <!-- Summary metrics -->
+        <div class="container" style="padding: 10px; margin: 0 0 15px 0;">
+          <h4 style="margin-top: 0;">Summary Metrics</h4>
+          <div style="display: flex; flex-wrap: wrap;">
+            <div style="margin-right: 20px; min-width: 150px;">
+              <div style="font-size: 0.9em; color: #666;">Total Responses</div>
+              <div style="font-size: 1.4em; font-weight: bold;" id="nrdb-total-responses">0</div>
+            </div>
+            <div style="margin-right: 20px; min-width: 150px;">
+              <div style="font-size: 0.9em; color: #666;">NPS Score</div>
+              <div style="font-size: 1.4em; font-weight: bold;" id="nrdb-nps-score">0</div>
+            </div>
+            <div style="margin-right: 20px; min-width: 100px;">
+              <div style="font-size: 0.9em; color: #666;">Promoters</div>
+              <div style="font-size: 1.4em; font-weight: bold; color: #28a745;" id="nrdb-promoters">0</div>
+            </div>
+            <div style="margin-right: 20px; min-width: 100px;">
+              <div style="font-size: 0.9em; color: #666;">Passives</div>
+              <div style="font-size: 1.4em; font-weight: bold; color: #ffc107;" id="nrdb-passives">0</div>
+            </div>
+            <div style="min-width: 100px;">
+              <div style="font-size: 0.9em; color: #666;">Detractors</div>
+              <div style="font-size: 1.4em; font-weight: bold; color: #dc3545;" id="nrdb-detractors">0</div>
+            </div>
           </div>
         </div>
         
-        <div id="nrdb-chart-container">
-          <!-- Chart will be inserted here -->
+        <!-- Chart visualization -->
+        <div class="container" style="padding: 10px; margin: 0 0 15px 0;">
+          <h4 style="margin-top: 0;">Visualization</h4>
+          <div id="nrdb-chart-container" style="min-height: 200px;"></div>
         </div>
         
-        <h4>Query Results</h4>
-        <div id="nrdb-results-table" class="results-container" style="max-height: 300px; overflow: auto;">
-          <table id="nrdb-table" style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr id="nrdb-table-header">
-                <th>Loading...</th>
-              </tr>
-            </thead>
-            <tbody id="nrdb-table-body">
-              <tr>
-                <td>Loading data...</td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Table results -->
+        <div class="container" style="padding: 10px; margin: 0;">
+          <h4 style="margin-top: 0;">Data Table</h4>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead id="nrdb-table-header">
+                <!-- Will be populated by JavaScript -->
+              </thead>
+              <tbody id="nrdb-table-body">
+                <!-- Will be populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       
-      <div id="nrdb-no-results" class="results-container">
-        <p>No data retrieved from New Relic. Run a query to see results.</p>
+      <div id="nrdb-no-results" style="margin-top: 20px; padding: 20px; background: #f7f7f7; border-radius: 5px; text-align: center;">
+        <p>No results to display. Run a query to see data here.</p>
       </div>
     </div>
   </div>
 
+  <div class="container">
+    <h2>NRQL Query Examples</h2>
+    <p>Use these queries in New Relic to analyze your NPS data:</p>
+    <pre>-- View all NPS responses for current user/session
+SELECT *
+FROM NpsResponsePoc
+WHERE userId = '<span id="query-user-id">Loading...</span>'
+AND sessionId = '<span id="query-session-id">Loading...</span>'
+SINCE 1 day ago</pre>
 
+<pre>-- Calculate overall NPS score
+SELECT 
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - 
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore,
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) AS promoters,
+  sum(CASE WHEN npsScore BETWEEN 7 AND 8 THEN 1 ELSE 0 END) AS passives,
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) AS detractors,
+  count(*) AS totalResponses
+FROM NpsResponsePoc
+SINCE 1 day ago</pre>
+
+<pre>-- View NPS trend over time
+SELECT 
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - 
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore
+FROM NpsResponsePoc
+FACET hourOf(timestamp) 
+SINCE 1 day ago</pre>
+  </div>
 
   <script>
     // Fetch New Relic configuration from the server
@@ -564,7 +461,6 @@
       "applicationName": ""
     }
   </script>
-=======
   <script src="/js/app.js"></script>
 </body>
 </html>

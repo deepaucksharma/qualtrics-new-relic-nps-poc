@@ -123,19 +123,10 @@ app.get('/api/config', (req, res) => {
 app.post('/api/query-nrdb', async (req, res) => {
   try {
     const { query, timeRange } = req.body;
+    const apiKey = process.env.NEW_RELIC_USER_API_KEY;
+    const accountId = process.env.NEW_RELIC_ACCOUNT_ID;
     
-    // Instead of hardcoding keys, always use demo mode for POC
-    // This approach demonstrates the UI without requiring actual NR credentials
-    console.log('DEBUG - Using demo mode by default for better user experience');
-    
-    // Skip the API call entirely to improve performance
-    return res.json({
-      success: true,
-      demo: true,
-      message: 'Using realistic sample data for demonstration',
-      data: generateDemoData(query)
-    });
-    
+    // If API key or account ID not set, use demo mode
     if (!apiKey || !accountId) {
       return res.json({
         success: true,
@@ -146,7 +137,6 @@ app.post('/api/query-nrdb', async (req, res) => {
     }
     
     // In a real implementation, we would make an API call to New Relic
-    // For the POC, we'll use a mock response if the API key isn't configured
     try {
       // Try with the Insights Query API
       const nrResponse = await axios.get(
@@ -184,7 +174,7 @@ app.post('/api/query-nrdb', async (req, res) => {
           success: false,
           error: 'Unexpected API response format',
           demo: true,
-          demoData: generateDemoData(query)
+          data: generateDemoData(query)
         });
       }
     } catch (apiError) {
@@ -212,9 +202,9 @@ app.post('/api/query-nrdb', async (req, res) => {
 // Generate demo data for NRDB verification
 function generateDemoData(query) {
   // Check if query contains specific parts to determine what kind of data to generate
-  const isScoreQuery = query.toLowerCase().includes('npsscore');
-  const isDistributionQuery = query.toLowerCase().includes('facet') && query.toLowerCase().includes('npsscore');
-  const isOverallQuery = query.toLowerCase().includes('count(*)') || query.toLowerCase().includes('sum(');
+  const isScoreQuery = query?.toLowerCase().includes('npsscore') || false;
+  const isDistributionQuery = query?.toLowerCase().includes('facet') && query?.toLowerCase().includes('npsscore') || false;
+  const isOverallQuery = query?.toLowerCase().includes('count(*)') || query?.toLowerCase().includes('sum(') || false;
   
   let demoData;
   
