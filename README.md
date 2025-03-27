@@ -144,7 +144,11 @@ For demonstration purposes, the Integration Service uses a mock implementation o
 
 ### Browser Compatibility
 
-The Sample Web Application is designed to run in a server environment and uses ES6 features. We've made sure that template literals and other ES6 syntax are properly handled in the server-side code to prevent parsing errors.
+The Sample Web Application uses modern JavaScript features while maintaining good compatibility across browsers. The application is structured with:
+
+- Server-side code using Node.js and Express
+- Client-side JavaScript in external files for better organization and performance
+- New Relic Browser Agent properly integrated with fallback mechanisms
 
 ## Using the Sample App Interface
 
@@ -265,7 +269,11 @@ qualtrics-new-relic-nps-poc/
 ├── sample-app/              # Sample web application with NR Browser Agent
 │   ├── Dockerfile           # Container definition
 │   ├── package.json         # Dependencies
-│   └── app.js               # Application code with dashboard interface
+│   ├── app.js               # Server-side application code 
+│   └── public/              # Static web assets
+│       ├── index.html       # Main HTML template
+│       └── js/              # Client-side JavaScript
+│           └── app.js       # Main client-side application logic
 └── webhook-simulator/       # Tools for simulating webhooks
     ├── Dockerfile           # Container definition
     ├── package.json         # Dependencies
@@ -364,11 +372,14 @@ SINCE 1 day ago
 ### Common Issues:
 
 - **Services Not Starting**: Check that ports 3000, 3001, and 3002 are not in use
-- **Template Literal Errors**: If you see errors about unexpected tokens in the sample-app service, ensure you're using string concatenation instead of template literals in any server-side code
+- **JavaScript Loading Issues**: If you see 404 errors for JavaScript files, check that the `/public/js/app.js` file exists and is properly referenced
 - **Integration Service Not Receiving Webhooks**: Verify network connectivity between containers
 - **Events Not Appearing in New Relic**: Verify your Insert API Key and check the Integration Service logs
 - **Missing Dependencies**: If you see errors about missing modules, try rebuilding the containers with `docker-compose build --no-cache`
 - **Webhook Simulation Errors**: Check the results tab for detailed error information
+- **User ID or Session ID Not Appearing**: Try switching to the fallback mode by clicking "Loading..." after a few seconds
+
+For more detailed troubleshooting information, see the [troubleshooting guide](./docs/troubleshooting.md).
 
 ## License
 

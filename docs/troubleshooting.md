@@ -4,6 +4,20 @@
 
 ### Sample Web Application
 
+#### JavaScript Not Loading
+
+**Symptoms:**
+- 404 errors for `/js/app.js` in browser console
+- Tab navigation not working
+- User interface elements non-responsive
+- "Loading..." text remains on identity information
+
+**Solutions:**
+1. Verify the JavaScript file exists at `/sample-app/public/js/app.js`
+2. Check if the HTML correctly references the JavaScript file
+3. Make sure the server is properly serving static files from the public directory
+4. If modifying the app, rebuild the container: `docker-compose build --no-cache sample-app`
+
 #### Browser Agent Not Loading
 
 **Symptoms:**
@@ -16,6 +30,7 @@
 2. Verify `NEW_RELIC_LICENSE_KEY` and `NEW_RELIC_APP_ID` environment variables
 3. Check network connectivity to New Relic domains
 4. Ensure CSP headers allow New Relic scripts and connections
+5. Check browser console for CORS or CSP-related errors
 
 #### Session ID Not Being Captured
 
@@ -28,6 +43,7 @@
 2. Increase the delay before checking for sessionId (currently 500ms)
 3. Check browser console for errors
 4. Verify that sessionStorage is enabled in the browser
+5. Try using the fallback mechanism by clicking directly on "Loading..."
 
 #### User ID Not Being Set
 
@@ -39,6 +55,7 @@
 1. Verify the `newrelic.setUserId()` call is executed
 2. Check browser console for errors
 3. Ensure the call happens after the Browser Agent is fully loaded
+4. Check the fallback mechanism is working properly
 
 ### Integration Service
 
@@ -89,6 +106,46 @@
 2. Verify unique `responseId` values for each webhook
 3. Restart the service to clear the in-memory idempotency store
 
+### UI Issues
+
+#### Tabs Not Switching Correctly
+
+**Symptoms:**
+- Clicking on tabs doesn't change the content
+- All content sections are visible at once
+- Console errors related to undefined elements
+
+**Solutions:**
+1. Check that the JavaScript file is properly loaded
+2. Verify the tab click handlers are being registered
+3. Check for duplicate IDs or missing elements in the HTML
+4. Inspect the browser console for JavaScript errors
+
+#### Forms Not Submitting
+
+**Symptoms:**
+- Submit button has no effect
+- No network requests when clicking submit
+- No error messages
+
+**Solutions:**
+1. Check for JavaScript errors in the console
+2. Verify the event listeners are properly attached
+3. Check network conditions and connectivity to API endpoints
+4. Try refreshing the page to reinitialize event handlers
+
+#### Results Not Displaying
+
+**Symptoms:**
+- Results tab shows "No results yet" even after simulation
+- Results not refreshing when tab is clicked
+
+**Solutions:**
+1. Check the API endpoint is returning results
+2. Verify the results processing code is working
+3. Make sure the results array is being populated in the Webhook Simulator
+4. Try clicking "Refresh" button in the results tab
+
 ### Correlation Issues
 
 #### Events Not Correlating in NRQL
@@ -103,6 +160,32 @@
 2. Check time windows in NRQL queries
 3. Verify both event types exist in New Relic
 4. Check for encoding or format issues in the identifiers
+
+### Docker and Network Issues
+
+#### Services Appear Unhealthy
+
+**Symptoms:**
+- Docker reports containers as "unhealthy" despite working endpoints
+- Health checks not passing in Docker Compose
+
+**Solutions:**
+1. Wait for the services to initialize fully (can take up to a minute)
+2. Verify that health check endpoints respond correctly
+3. Check Docker logs for specific health check failures
+4. Restart the containers if health checks continue to fail
+
+#### Inter-Service Communication Failures
+
+**Symptoms:**
+- Communication between containers fails
+- Services can't reach each other by hostname
+
+**Solutions:**
+1. Verify all services are on the same Docker network
+2. Check Docker network configuration
+3. Try using IP addresses instead of hostnames for debugging
+4. Check for DNS resolution issues within the Docker network
 
 ## Diagnostic Procedures
 
@@ -127,6 +210,30 @@ function diagnoseNewRelic() {
 }
 
 diagnoseNewRelic();
+```
+
+### Testing Client-Side JavaScript
+
+Check if the JavaScript is loaded and functioning properly:
+
+```javascript
+function diagnoseAppJS() {
+  // Check for presence of key function
+  console.log('initSimulator exists:', typeof window.initSimulator === 'function');
+  
+  // Check event listeners
+  const tabs = document.querySelectorAll('.tab');
+  console.log('Tab elements found:', tabs.length > 0);
+  
+  const hasClickHandlers = Array.from(tabs).some(tab => 
+    tab.onclick !== null || tab._events?.click);
+  console.log('Tabs have click handlers:', hasClickHandlers);
+  
+  // Check structure
+  console.log('Tab contents:', document.querySelectorAll('.tab-content').length);
+}
+
+diagnoseAppJS();
 ```
 
 ### Testing Webhook Endpoint
@@ -188,15 +295,47 @@ SELECT * FROM PageView WHERE sessionId = 'test1234567890' SINCE 1 day ago
    [event-publisher] [R_12345] Failed to send event to New Relic: Invalid API key
    ```
 
+4. **JavaScript Loading Errors**:
+   ```
+   Failed to load resource: the server responded with a status of 404 (Not Found) http://localhost:3000/js/app.js
+   ```
+
 ### Enabling Debug Logging
 
 Set the `LOG_LEVEL=debug` environment variable to increase logging detail.
+
+## Common Environment Issues
+
+### Node.js Version Conflicts
+
+**Symptoms:**
+- Unexpected syntax errors for valid ES6+ code
+- Module resolution issues
+- Errors with newer JavaScript features
+
+**Solutions:**
+1. Verify Node.js versions in Docker containers (check Dockerfiles)
+2. Ensure all services are using compatible versions
+3. For local development, use Node.js 16+ 
+
+### Environment Variables Missing or Incorrect
+
+**Symptoms:**
+- Services fail to start properly
+- Error messages mentioning "undefined" keys or values
+- Authentication failures
+
+**Solutions:**
+1. Confirm `.env` file exists and has all required variables
+2. Verify values are formatted correctly (watch for extra spaces)
+3. For Docker, ensure environment variables are passed to containers
+4. Restart services after changing environment variables
 
 ## Getting Additional Help
 
 If you're unable to resolve an issue using this guide:
 
-1. Gather relevant logs from both the Sample App and Integration Service
-2. Check the New Relic console for any errors or warnings
+1. Gather relevant logs from all services
+2. Check the browser console for client-side errors
 3. Document the exact steps to reproduce the issue
-4. Contact your New Relic account representative or Qualtrics support team
+4. Create an issue in the GitHub repository with all collected information
