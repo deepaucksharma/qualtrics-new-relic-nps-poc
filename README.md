@@ -1,20 +1,20 @@
 # Qualtrics-New Relic NPS Integration POC
 
-This project demonstrates the integration between Qualtrics NPS survey responses and New Relic Browser Agent data, enabling the correlation of user experience metrics with customer feedback.
+This project demonstrates the integration between Qualtrics NPS survey responses and New Relic Browser Agent data, enabling the correlation of user experience metrics with customer feedback. The POC includes tools to automatically generate realistic NPS data for testing and demonstration purposes.
 
 ## Architecture Overview
 
 The POC consists of three main components:
 
-1. **Sample Web Application**: A web app instrumented with New Relic Browser Agent that captures userId and sessionId.
+1. **Sample Web Application**: A web app instrumented with New Relic Browser Agent that captures userId and sessionId. Includes an integrated dashboard for controlling simulations and viewing results.
 2. **Integration Service**: A backend service that receives webhook data from Qualtrics, processes it, and forwards to New Relic.
-3. **Webhook Simulator**: Tools to simulate Qualtrics webhook requests for testing.
+3. **Webhook Simulator**: API and tools to simulate Qualtrics webhook requests in various modes (simple, random, and bulk).
 
 ## Data Flow
 
 1. User interacts with Sample Web App
 2. New Relic Browser Agent captures performance data and user identifiers
-3. Sample App displays the userId and sessionId
+3. Sample App dashboard controls data generation and displays results
 4. Webhook Simulator sends NPS data with matching identifiers to Integration Service
 5. Integration Service validates, processes, and forwards data to New Relic
 6. Data can be correlated in New Relic using NRQL queries
@@ -75,7 +75,27 @@ NEW_RELIC_ACCOUNT_ID=your_account_id_here
 
 ### 3. Start the application
 
-#### Using Docker Compose (recommended)
+#### Using npm scripts (recommended)
+
+A root package.json has been added with convenient scripts:
+
+```bash
+# Start everything using Docker Compose
+npm start
+
+# Stop all services
+npm run stop
+
+# Rebuild containers (if you make changes)
+npm run rebuild
+
+# Run individual services (for development)
+npm run sample-app
+npm run integration-service
+npm run webhook-simulator
+```
+
+#### Using Docker Compose directly
 
 ```bash
 docker-compose up --build
@@ -84,9 +104,9 @@ docker-compose up --build
 This will start all three services:
 - Sample Web App: http://localhost:3000
 - Integration Service: http://localhost:3001
-- Webhook Simulator (runs as a service)
+- Webhook Simulator API: http://localhost:3002
 
-#### Using npm (for development)
+#### Running services individually (for development)
 
 ```bash
 # Start Sample Web Application
@@ -99,201 +119,203 @@ cd integration-service
 npm install
 npm start
 
-# In a new terminal, use the Webhook Simulator
+# In a new terminal, start the Webhook Simulator API
 cd webhook-simulator
 npm install
-node simulate-webhook.js
+npm start
 ```
 
-## Using the Application
+## Using the Sample App Interface
 
-1. **Access the Sample Web Application**:
-   - Open http://localhost:3000 in your browser
-   - The application will display a User ID and Session ID
-   - These IDs are captured by the New Relic Browser Agent
+The sample app now includes a comprehensive dashboard for controlling the webhook simulator and viewing results. Access it at http://localhost:3000.
 
-2. **Generate a Survey Link**:
-   - Click the "Generate Survey Link" button
-   - This creates a simulated Qualtrics survey link with the User ID and Session ID as parameters
-   - In a real implementation, this link would be sent to users via email or displayed after an interaction
+### 1. Identity Information
 
-3. **Simulate a Webhook**:
-   - Use the Qualtrics webhook simulator to send realistic test data:
-     ```bash
-     cd webhook-simulator
-     npm run qualtrics
-     ```
-   - The simulator offers several options:
-     - **Interactive Mode**: Manually enter userId, sessionId, NPS score, and comments
-     - **Random Mode**: Generate random values for quick testing
-   
-   - For simpler testing, you can also use:
-     ```bash
-     # Simple interactive simulator
-     npm run simple
-     
-     # Quick payload sender
-     npm run send
-     ```
+The top section displays:
+- User ID: Generated for the current user
+- Session ID: Captured by the New Relic Browser Agent
 
-4. **Verify in New Relic**:
-   - Log into your New Relic account
-   - Run the following NRQL query to see correlated data:
-     ```sql
-     SELECT filter(count(*), WHERE eventType() = 'PageView') as PageViews, 
-            filter(count(*), WHERE eventType() = 'NpsResponsePoc') as NpsResponses, 
-            latest(NpsResponsePoc.npsScore) as NpsScore, 
-            latest(NpsResponsePoc.npsCategory) as NpsCategory
-     FROM PageView, NpsResponsePoc
-     WHERE sessionId = '<your-session-id>'
-     AND userId = '<your-user-id>'
-     SINCE 1 hour ago
-     ```
+### 2. Webhook Simulator Control Panel
 
-## Project Structure
+The dashboard includes tabs for different simulation modes:
 
-```
-nps-poc/
-├── docker-compose.yml        # Docker Compose configuration
-├── .env.example              # Example environment variables
-├── README.md                 # Project documentation
-├── docs/                     # Additional documentation
-│   ├── architecture.md       # Architecture overview
-│   ├── api-spec.md           # API specifications
-│   └── troubleshooting.md    # Troubleshooting guide
-├── integration-service/      # Backend service for processing webhooks
-│   ├── Dockerfile            # Container definition
-│   ├── package.json          # Dependencies
-│   ├── server.js             # Main application entry point
-│   └── src/                  # Source code
-├── sample-app/               # Sample web application with NR Browser Agent
-│   ├── Dockerfile            # Container definition
-│   ├── package.json          # Dependencies
-│   └── app.js                # Application code
-└── webhook-simulator/        # Tools for simulating webhooks
-    ├── Dockerfile            # Container definition
-    ├── package.json          # Dependencies
-    ├── send-payload.js       # Script to send test payloads
-    └── simulate-webhook.js   # Interactive webhook simulator
-```
+#### Simple Mode
+- Send a single NPS response with a specified score and comment
+- Useful for quick tests of individual responses
 
-For detailed architecture information, see [docs/architecture.md](docs/architecture.md).
+#### Random Mode
+- Generate multiple responses with realistic score distribution
+- Automatically creates contextual comments based on the score
+- Select from 1, 5, 10, or 25 responses
 
-## Integrating with Qualtrics
+#### Bulk Generation
+- Create large datasets of NPS responses over time
+- Configurable options:
+  - Number of responses (25-500)
+  - Time period to spread responses over (1-90 days)
+  - Custom distribution percentages for Promoters/Passives/Detractors
+- Useful for realistic data visualization in New Relic
 
-This project now includes a more accurate Qualtrics webhook simulator that closely mimics the actual Qualtrics webhook format. The integration service has been updated to handle both the simplified format (used in earlier versions) and the full Qualtrics format.
+#### Results
+- View all simulation results with timing information
+- Shows NPS score distribution charts for bulk generations
+- Display comments and user information
+- Refresh or clear results as needed
 
-### Using the Qualtrics Simulator
+### 3. NRQL Query Examples
 
-The new simulator (`qualtrics-simulator.js`) creates webhook payloads that match the structure of real Qualtrics webhooks:
+The dashboard includes sample NRQL queries you can use in New Relic to analyze the simulated data:
+- View all NPS responses for the current user/session
+- Calculate overall NPS score
+- View NPS trends over time
+
+## Command Line Webhook Simulators
+
+In addition to the web interface, you can still use the command-line simulators:
+
+### Qualtrics Format Simulator
 
 ```bash
 cd webhook-simulator
 npm run qualtrics
 ```
 
-Key features:
+This interactive simulator creates webhooks that match real Qualtrics format:
 - Proper Qualtrics response ID format
 - Embedded data structure for userId and sessionId
 - Question response format matching Qualtrics' schema
-- HMAC signature generation using the same algorithm as Qualtrics
+- HMAC signature generation
 - Interactive and random data generation modes
 
-### For Production Implementation
+### Bulk Data Generator
 
-For a production implementation with actual Qualtrics surveys:
-
-1. **Create a Qualtrics Survey**:
-   - Include an NPS question (typically 0-10 scale)
-   - Add a follow-up text entry question for comments
-   - Include hidden embedded data fields for `userId` and `sessionId`
-   - Set up URL parameters to capture these values:
-     ```
-     https://[your-qualtrics-survey-url]?userId=${userId}&sessionId=${sessionId}
-     ```
-
-2. **Configure Qualtrics Webhook**:
-   - In your Qualtrics account, go to Account Settings > Webhooks
-   - Create a new webhook pointing to your Integration Service endpoint
-   - Set up a shared secret for HMAC validation (same as QUALTRICS_WEBHOOK_SECRET)
-   - Configure the webhook to trigger on survey completion
-   - Enable the "Include survey questions and responses" option
-
-3. **Integration Service Compatibility**:
-   - The integration service now automatically detects and processes the Qualtrics webhook format
-   - It extracts userId and sessionId from the embedded data
-   - It finds the NPS score from either the values or questions section
-   - It locates comments from text entry questions
-   - All data is normalized to a consistent format before processing
-
-### Testing with Real Qualtrics Data
-
-To test with a sample of real Qualtrics webhook data:
-
-1. Use the simulator in interactive mode
-2. Review the generated payload to understand the Qualtrics format
-3. Verify that the integration service correctly processes the data
-4. Check New Relic to confirm the event was published with all fields
-
-### Qualtrics Webhook Format Reference
-
-The Qualtrics webhook format includes:
-
-```json
-{
-  "responseId": "R_AbCdEfGhIjKlM",
-  "surveyId": "SV_12345678",
-  "ownerId": "UR_AbCdEfGh",
-  "responseDate": "2023-04-15T14:22:07Z",
-  "values": {
-    "startDate": "2023-04-15T14:20:00Z",
-    "endDate": "2023-04-15T14:22:07Z",
-    "status": "0",
-    "progress": "100",
-    "duration": 127,
-    "finished": "1",
-    "recordedDate": "2023-04-15T14:22:07Z",
-    "_recordId": "R_AbCdEfGhIjKlM"
-  },
-  "labels": {},
-  "questions": {
-    "QID1": {
-      "QuestionID": "QID1",
-      "QuestionType": "NPS",
-      "QuestionText": "How likely are you to recommend...",
-      "Answers": {
-        "Value": "9"
-      }
-    },
-    "QID2": {
-      "QuestionID": "QID2",
-      "QuestionType": "TE",
-      "QuestionText": "What is the reason for your score?",
-      "Answers": {
-        "Text": "Great product and support!"
-      }
-    }
-  },
-  "embeddedData": {
-    "userId": "USER_12345",
-    "sessionId": "SESSION_abcdef123456",
-    "surveySource": "website"
-  }
-}
+```bash
+cd webhook-simulator
+npm run bulk
 ```
 
-## Security Considerations
+This powerful tool generates large volumes of realistic NPS data:
 
-- HMAC validation is used to verify webhook authenticity
-- All API keys are stored in environment variables, never in code
-- Input validation is performed on all webhook data
-- CSP headers are configured to allow New Relic Browser Agent
+```bash
+# Run with default settings (100 responses over 30 days)
+npm run bulk
+
+# Generate 500 responses over 90 days
+npm run bulk -- --count 500 --days 90 --send
+
+# Generate 1000 responses and save to a file (without sending)
+npm run bulk -- --count 1000 --output
+
+# Control the rate of requests (500ms between each)
+npm run bulk -- --count 200 --send --rate 500
+```
+
+Features:
+- Realistic NPS score distribution (configurable percentages)
+- Contextual comments based on score category
+- Time distribution across specified period
+- Varied user/session ID formats
+- Detailed summary statistics
+
+## Project Structure
+
+```
+qualtrics-new-relic-nps-poc/
+├── package.json             # Root package.json with convenience scripts
+├── docker-compose.yml       # Docker Compose configuration
+├── .env.example             # Example environment variables
+├── README.md                # Project documentation
+├── docs/                    # Additional documentation
+│   ├── architecture.md      # Architecture overview
+│   ├── api-spec.md          # API specifications
+│   └── troubleshooting.md   # Troubleshooting guide
+├── integration-service/     # Backend service for processing webhooks
+│   ├── Dockerfile           # Container definition
+│   ├── package.json         # Dependencies
+│   ├── server.js            # Main application entry point
+│   └── src/                 # Source code
+├── sample-app/              # Sample web application with NR Browser Agent
+│   ├── Dockerfile           # Container definition
+│   ├── package.json         # Dependencies
+│   └── app.js               # Application code with dashboard interface
+└── webhook-simulator/       # Tools for simulating webhooks
+    ├── Dockerfile           # Container definition
+    ├── package.json         # Dependencies
+    ├── server.js            # Webhook simulator API service
+    ├── qualtrics-simulator.js # Interactive Qualtrics format simulator
+    ├── generate-bulk-responses.js # Bulk data generator
+    ├── send-payload.js      # Script to send test payloads
+    └── simulate-webhook.js  # Simple interactive webhook simulator
+```
+
+## Data Generation Features
+
+The webhook simulator includes several features to generate realistic NPS data:
+
+### Realistic NPS Distribution
+
+By default, the simulator generates scores with a distribution typically seen in real NPS surveys:
+- Promoters (scores 9-10): ~35% of responses
+- Passives (scores 7-8): ~25% of responses
+- Detractors (scores 0-6): ~40% of responses
+
+You can customize this distribution through the web interface or command-line options.
+
+### Contextual Comments
+
+Generated comments match the sentiment of the NPS score:
+- Promoters get positive comments about reliability, satisfaction, etc.
+- Passives get neutral comments mentioning both pros and cons
+- Detractors get negative comments about issues, problems, etc.
+
+### Time Distribution
+
+When generating bulk data:
+- Responses are spread evenly across your specified date range
+- Each response gets a realistic timestamp
+- You can analyze trends over time in New Relic
+
+## Analyzing Data in New Relic
+
+Once you've generated NPS data, you can create custom dashboards in New Relic:
+
+### Basic Queries
+
+```sql
+-- Calculate NPS Score
+SELECT 
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - 
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore
+FROM NpsResponsePoc SINCE 1 day ago
+
+-- Distribution of scores
+SELECT count(*) FROM NpsResponsePoc FACET npsScore SINCE 1 day ago
+
+-- Distribution by category
+SELECT count(*) FROM NpsResponsePoc FACET npsCategory SINCE 1 day ago
+```
+
+### Correlation Queries
+
+```sql
+-- Correlate NPS with page performance
+SELECT 
+  average(duration) AS 'Avg Page Load (ms)', 
+  sum(CASE WHEN npsCategory = 'Promoter' THEN 1 ELSE 0 END) * 100.0 / count(*) AS 'Promoter %'
+FROM PageView, NpsResponsePoc
+WHERE PageView.session = NpsResponsePoc.sessionId
+FACET PageView.pageUrl
+SINCE 1 day ago
+```
 
 ## Troubleshooting
 
-- **Browser Agent Not Loading**: Verify your New Relic license key and app ID
-- **Webhook Authentication Failing**: Check that the QUALTRICS_WEBHOOK_SECRET matches in both services
+### Common Issues:
+
+- **Services Not Starting**: Check that ports 3000, 3001, and 3002 are not in use
+- **Integration Service Not Receiving Webhooks**: Verify network connectivity between containers
 - **Events Not Appearing in New Relic**: Verify your Insert API Key and check the Integration Service logs
+- **Webhook Simulation Errors**: Check the results tab for detailed error information
 
 ## License
 

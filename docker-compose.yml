@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  sample-app:
+    build:
+      context: ./sample-app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${SAMPLE_APP_PORT:-3000}
+      - NEW_RELIC_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
+      - NEW_RELIC_APP_ID=${NEW_RELIC_APP_ID}
+      - NEW_RELIC_APP_NAME=${NEW_RELIC_APP_NAME}
+      - WEBHOOK_SIMULATOR_URL=http://webhook-simulator:3002
+    volumes:
+      - ./sample-app:/app
+      - /app/node_modules
+    networks:
+      - nps-poc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  integration-service:
+    build:
+      context: ./integration-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${INTEGRATION_SERVICE_PORT:-3001}
+      - NEW_RELIC_INSERT_KEY=${NEW_RELIC_INSERT_KEY}
+      - QUALTRICS_WEBHOOK_SECRET=${QUALTRICS_WEBHOOK_SECRET}
+    volumes:
+      - ./integration-service:/app
+      - /app/node_modules
+    networks:
+      - nps-poc-network
+    depends_on:
+      - sample-app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  webhook-simulator:
+    build:
+      context: ./webhook-simulator
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - INTEGRATION_SERVICE_URL=http://integration-service:3001/webhook/qualtrics
+      - QUALTRICS_WEBHOOK_SECRET=${QUALTRICS_WEBHOOK_SECRET}
+    volumes:
+      - ./webhook-simulator:/app
+      - /app/node_modules
+    networks:
+      - nps-poc-network
+    depends_on:
+      - integration-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  nps-poc-network:
+    driver: bridge

@@ -1,0 +1,16 @@
+{
+  "name": "qualtrics-new-relic-nps-poc",
+  "version": "1.0.0",
+  "description": "Integration POC between Qualtrics NPS data and New Relic",
+  "scripts": {
+    "start": "docker-compose up --build",
+    "stop": "docker-compose down",
+    "rebuild": "docker-compose build --no-cache",
+    "sample-app": "cd sample-app && npm start",
+    "integration-service": "cd integration-service && npm start",
+    "webhook-simulator": "cd webhook-simulator && npm start",
+    "webhook-bulk": "cd webhook-simulator && npm run bulk"
+  },
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qualtrics-New Relic NPS Integration POC</title>
+  
+  <!-- New Relic Browser Agent -->
+  <script type="text/javascript">
+    // This will be configured by server
+    window.NREUM||(NREUM={});
+  </script>
+  <script src="https://js-agent.newrelic.com/nr-1234.min.js"></script>
+  
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 20px; 
+      line-height: 1.6;
+    }
+    .container { 
+      background: #f5f5f5; 
+      padding: 20px; 
+      border-radius: 5px; 
+      margin: 20px 0; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .id-display { 
+      background: #e0e0e0; 
+      padding: 10px; 
+      border-radius: 3px; 
+      font-family: monospace;
+      word-break: break-all;
+    }
+    button { 
+      background: #0066cc; 
+      color: white; 
+      border: none; 
+      padding: 10px 15px; 
+      cursor: pointer; 
+      border-radius: 3px;
+      font-weight: bold;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    button:hover {
+      background: #0055aa;
+    }
+    button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+    .danger-button {
+      background: #cc0000;
+    }
+    .danger-button:hover {
+      background: #aa0000;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
+    }
+    .tab.active {
+      background: #f5f5f5;
+      border-color: #ccc;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .results-container {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .result-item {
+      border: 1px solid #eee;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 3px;
+    }
+    .result-item.success {
+      border-left: 5px solid green;
+    }
+    .result-item.error {
+      border-left: 5px solid red;
+    }
+    .result-item.summary {
+      border-left: 5px solid blue;
+      background-color: #f0f8ff;
+    }
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .result-time {
+      font-size: 0.8em;
+      color: #666;
+    }
+    .result-label {
+      display: inline-block;
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-size: 0.8em;
+      margin-right: 5px;
+    }
+    .label-promoter {
+      background-color: #d4f7d4;
+      color: #007700;
+    }
+    .label-passive {
+      background-color: #fff7d4;
+      color: #777700;
+    }
+    .label-detractor {
+      background-color: #f7d4d4;
+      color: #770000;
+    }
+    .label-type {
+      background-color: #d4e6f7;
+      color: #000077;
+    }
+    .nps-chart {
+      display: flex;
+      margin: 10px 0;
+      height: 25px;
+    }
+    .nps-segment {
+      text-align: center;
+      color: white;
+      line-height: 25px;
+      font-size: 0.9em;
+    }
+    .nps-promoters {
+      background-color: #28a745;
+    }
+    .nps-passives {
+      background-color: #ffc107;
+    }
+    .nps-detractors {
+      background-color: #dc3545;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      border-top-color: #0066cc;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .hidden {
+      display: none;
+    }
+    #surveyLink { 
+      margin-top: 15px; 
+      word-break: break-all; 
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 3px;
+      overflow-x: auto;
+    }
+    .success-message {
+      color: green;
+      margin-left: 10px;
+    }
+    .error-message {
+      color: red;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Qualtrics-New Relic NPS Integration POC</h1>
+  
+  <div class="container">
+    <h2>Identity Information</h2>
+    <p>This information will be used to correlate Browser data with NPS responses:</p>
+    
+    <div class="id-display">
+      <p><strong>User ID:</strong> <span id="userIdDisplay">Loading...</span></p>
+      <p><strong>Session ID:</strong> <span id="sessionIdDisplay">Loading...</span></p>
+    </div>
+  </div>
+  
+  <div class="container">
+    <h2>Webhook Simulator Control Panel</h2>
+    <p>Use this panel to generate and send simulated Qualtrics NPS data to New Relic:</p>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="simple">Simple Mode</div>
+      <div class="tab" data-tab="random">Random Mode</div>
+      <div class="tab" data-tab="bulk">Bulk Generation</div>
+      <div class="tab" data-tab="results">Results</div>
+    </div>
+    
+    <div class="tab-content active" id="simple-tab">
+      <p>Send a single NPS response with specified values:</p>
+      <div class="form-group">
+        <label for="simple-score">NPS Score (0-10):</label>
+        <input type="number" id="simple-score" min="0" max="10" value="9">
+      </div>
+      <div class="form-group">
+        <label for="simple-comment">Comment:</label>
+        <input type="text" id="simple-comment" value="Great product, very useful!" style="width: 80%;">
+      </div>
+      <button id="send-simple">Send NPS Response</button>
+      <span id="simple-status" class="success-message hidden"></span>
+    </div>
+    
+    <div class="tab-content" id="random-tab">
+      <p>Generate responses with realistic score distribution and appropriate comments:</p>
+      <div class="form-group">
+        <label for="random-count">Number of responses:</label>
+        <select id="random-count">
+          <option value="1">1 response</option>
+          <option value="5">5 responses</option>
+          <option value="10">10 responses</option>
+          <option value="25">25 responses</option>
+        </select>
+      </div>
+      <button id="send-random">Generate Random Responses</button>
+      <span id="random-status" class="success-message hidden"></span>
+    </div>
+    
+    <div class="tab-content" id="bulk-tab">
+      <p>Generate a large dataset of NPS responses over time with realistic distribution:</p>
+      <div class="form-group">
+        <label for="bulk-count">Number of responses:</label>
+        <select id="bulk-count">
+          <option value="25">25 responses</option>
+          <option value="50">50 responses</option>
+          <option value="100">100 responses</option>
+          <option value="250">250 responses</option>
+          <option value="500">500 responses</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="bulk-days">Spread over days:</label>
+        <select id="bulk-days">
+          <option value="1">1 day</option>
+          <option value="7">7 days</option>
+          <option value="14">14 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>NPS Distribution:</label>
+        <div style="display: flex;">
+          <div style="margin-right: 20px;">
+            <label for="promoter-percent">Promoters (%):</label>
+            <input type="number" id="promoter-percent" min="0" max="100" value="35" style="width: 60px;">
+          </div>
+          <div style="margin-right: 20px;">
+            <label for="passive-percent">Passives (%):</label>
+            <input type="number" id="passive-percent" min="0" max="100" value="25" style="width: 60px;">
+          </div>
+          <div>
+            <label for="detractor-percent">Detractors (%):</label>
+            <input type="number" id="detractor-percent" min="0" max="100" value="40" style="width: 60px;">
+          </div>
+        </div>
+      </div>
+      <button id="send-bulk">Start Bulk Generation</button>
+      <span id="bulk-status" class="hidden"></span>
+      <div id="bulk-progress" class="hidden" style="margin-top: 10px;">
+        <p>Bulk generation in progress. This may take a while for large datasets.</p>
+        <p>Check the Results tab to monitor progress.</p>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="results-tab">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0;">Simulation Results</h3>
+        <div>
+          <button id="refresh-results">Refresh</button>
+          <button id="clear-results" class="danger-button">Clear All</button>
+        </div>
+      </div>
+      <div id="results-container" class="results-container">
+        <p id="no-results">No results yet. Run a simulation to see results here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>NRQL Query Examples</h2>
+    <p>Use these queries in New Relic to analyze your NPS data:</p>
+    <pre>-- View all NPS responses for current user/session
+SELECT *
+FROM NpsResponsePoc
+WHERE userId = '<span id="query-user-id">Loading...</span>'
+AND sessionId = '<span id="query-session-id">Loading...</span>'
+SINCE 1 day ago</pre>
+
+<pre>-- Calculate overall NPS score
+SELECT 
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - 
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore,
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) AS promoters,
+  sum(CASE WHEN npsScore BETWEEN 7 AND 8 THEN 1 ELSE 0 END) AS passives,
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) AS detractors,
+  count(*) AS totalResponses
+FROM NpsResponsePoc
+SINCE 1 day ago</pre>
+
+<pre>-- View NPS trend over time
+SELECT 
+  sum(CASE WHEN npsScore >= 9 THEN 1 ELSE 0 END) * 100.0 / count(*) - 
+  sum(CASE WHEN npsScore <= 6 THEN 1 ELSE 0 END) * 100.0 / count(*) AS npsScore
+FROM NpsResponsePoc
+FACET hourOf(timestamp) 
+SINCE 1 day ago</pre>
+  </div>
+
+  <script id="nrConfig" type="application/json">
+    {
+      "licenseKey": "",
+      "applicationID": "",
+      "applicationName": ""
+    }
+  </script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
